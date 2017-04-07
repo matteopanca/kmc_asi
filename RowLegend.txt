@@ -1,0 +1,16 @@
+1) File (+ path) containing the probabilities for the Double Vertex
+2) File (+ path) containing the probabilities for the Single Vertex
+3) Attempt Frequency - Double (Hz)
+4) Attempt Frequency - Single (Hz)
+5) Energy rescaling coeff. (Double)
+6) Energy rescaling coeff. (Single)
+7) Number of Vertex rows
+8) Number of Vertex columns
+9) Initial condition ('1', '2', '3', '4' or 'r')
+10) Boundary condition ('finite' or 'pbc')
+11) Standard Deviation for introducing disorder (with respect to barrier energies)
+12) Number of KMC steps
+13) Time Limit (s) - NOT USED
+14) Number of images to be saved for each run
+15) Number of runs
+16) Output HDF5 file (+ path): put the '.hdf5' extension

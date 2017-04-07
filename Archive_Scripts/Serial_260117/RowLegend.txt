@@ -1,0 +1,13 @@
+1) File (+ path) containing the probabilities for the Double Vertex
+2) File (+ path) containing the probabilities for the Single Vertex
+3) Attempt Frequency (Hz)
+4) Number of Vertex rows
+5) Number of Vertex columns
+6) Initial condition ('1', '2', '3', '4' or 'r')
+7) Boundary condition ('finite' or 'pbc')
+8) Standard Deviation for introducing disorder (with respect to barrier energies)
+9) Number of KMC steps
+10) Time Limit (s) - NOT USED
+11) Number of images to be saved for each run
+12) Number of runs
+13) Output HDF5 file (+ path): put the '.hdf5' extension

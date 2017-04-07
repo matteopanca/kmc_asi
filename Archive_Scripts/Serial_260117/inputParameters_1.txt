@@ -1,0 +1,13 @@
+C:\Users\matte\Documents\MATLAB\PhaseMapsSI\DipolarModel\Montecarlo\InputData\Prob_O_395.0_150.0_100.0_3.0_110.0_Double.txt
+C:\Users\matte\Documents\MATLAB\PhaseMapsSI\DipolarModel\Montecarlo\InputData\Prob_O_395.0_150.0_100.0_3.0_110.0.txt
+1e10
+25
+25
+r
+finite
+0
+2500
+0
+21
+10
+D:\Documents\KMC\ASI\Prob_O_395.0_150.0_100.0_TestAnnealing_1.hdf5
