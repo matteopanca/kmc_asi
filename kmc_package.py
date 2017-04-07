@@ -9,7 +9,8 @@ from scipy.optimize import curve_fit
 from scipy.integrate import odeint
 import h5py
 
-out_path = 'D:\Documents\KMC\ASI'
+out_path1 = 'D:\Documents\KMC\ASI'
+out_path2 = 'E:\Matteo\Python\KMC\Data\output'
 
 myG = '#00f700'
 myB = '#0000ff'
