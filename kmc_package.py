@@ -765,7 +765,7 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 	plt.show()
 
 #Plot the 4 vertices MASTER EQUATION evolution given the run and optionally the axis (Simple DVA M. Eq.)
-def plot_meq(input_name, run, ax='', file_flag=True):
+def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -835,15 +835,36 @@ def plot_meq(input_name, run, ax='', file_flag=True):
 		dyAnn[3] = 2*y[3]*y[3]*f[7,9] + y[3]*y[1]*f[7,6] + y[3]*y[0]*f[7,3] + y[3]*y[2]*(f[2,8] + f[5,8])
 		dyCre[3] = y[0]*y[2]*f[8,2] + y[1]*y[2]*f[8,5] + y[2]*y[2]*(2*f[9,7] + f[3,7] + f[6,7])
 		return (dyCre - dyAnn)
+	#Derivative function - No T1 ( y[0] = (c*(y[1]+y[2]+y[3])) )
+	#Also y[3] could be added, but when domain forms, y[3] has already disappeared
+	def meq_func_noT1(y, t, f, c):
+		dyAnn = np.zeros(4, dtype=np.float_)
+		dyCre = np.zeros(4, dtype=np.float_)
+		#no y[0] evolution
+		dyAnn[1] = 2*y[1]*y[1]*f[7,4] + y[1]*(c*(y[1]+y[2]+y[3]))*f[7,1] + y[1]*y[3]*f[7,6] + y[1]*y[2]*(f[2,5] + f[8,5])
+		dyCre[1] = (c*(y[1]+y[2]+y[3]))*y[2]*f[5,2] + y[3]*y[2]*f[5,8] + y[2]*y[2]*(2*f[4,7] + f[1,7] + f[6,7])
+		dyAnn[2] = 2*y[2]*y[2]*(f[0,7] + f[4,7] + f[9,7] + f[3,7] + f[1,7] + f[6,7])
+		dyCre[2] = 2*((c*(y[1]+y[2]+y[3]))*(c*(y[1]+y[2]+y[3]))*f[7,0] + (c*(y[1]+y[2]+y[3]))*y[3]*f[7,3] + (c*(y[1]+y[2]+y[3]))*y[1]*f[7,1] + y[1]*y[1]*f[7,4] + y[1]*y[3]*f[7,6] + y[3]*y[3]*f[7,9])
+		dyAnn[3] = 2*y[3]*y[3]*f[7,9] + y[3]*y[1]*f[7,6] + y[3]*(c*(y[1]+y[2]+y[3]))*f[7,3] + y[3]*y[2]*(f[2,8] + f[5,8])
+		dyCre[3] = (c*(y[1]+y[2]+y[3]))*y[2]*f[8,2] + y[1]*y[2]*f[8,5] + y[2]*y[2]*(2*f[9,7] + f[3,7] + f[6,7])
+		return (dyCre - dyAnn)
 	#Solve the Diff. Eq. System
-	y_sol = odeint(meq_func, y0_4, t, args=(freq_table,))
+	if noT1[0]:
+		y_sol = odeint(meq_func_noT1, y0_4, t, args=(freq_table, noT1[1]))
+		y_sol[:,0] = 1 - (y_sol[:,1] + y_sol[:,2] + y_sol[:,3])
+	else:
+		y_sol = odeint(meq_func, y0_4, t, args=(freq_table,))
 	
 	color_dictionary_4vert = [myM,myC,myK,myO]
 	if ax == '':
 		fig = plt.figure(figsize=(12,12))
 		ax = fig.add_subplot(1,1,1)
 	for i in range(4):
-		ax.semilogx(t, y_sol[:,i], '--', color=color_dictionary_4vert[i], linewidth=2, label='T{:d} - M. Eq.'.format(i+1))
+		if noT1[0]:
+			label_text = 'T{:d} - M. Eq. {:.2f}'.format(i+1, noT1[1])
+		else:
+			label_text = 'T{:d} - M. Eq.'.format(i+1)
+		ax.semilogx(t, y_sol[:,i], '--', color=color_dictionary_4vert[i], linewidth=2, label=label_text)
 	plt.xlabel('t (s)')
 	plt.ylabel('P(t)')
 	ax.set_ylim([0, 1])
