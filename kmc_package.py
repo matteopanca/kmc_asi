@@ -667,8 +667,8 @@ def plot_evo(input_name, run, image_flag=False, file_flag=True):
 	else:
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	evo = f[dset_evo_name].value[1:, :]
-	t = f[dset_t_name].value[1:]
+	evo = f[dset_evo_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -680,7 +680,7 @@ def plot_evo(input_name, run, image_flag=False, file_flag=True):
 		f.close()
 	
 	evo_dictionary_4vert = [3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3]
-	color_dictionary_4vert = [myG,myB,myR,myY]
+	color_dictionary_4vert = [myG, myB, myR, myY]
 	evo_4vertices = np.zeros((kmcSteps, 4), dtype=np.float_)
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
@@ -725,9 +725,9 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_evoT1_name = 'run{:d}/evo_T1'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	evo = f[dset_evo_name].value[1:, :]
-	evo_T1 = f[dset_evoT1_name].value[1:, :]
-	t = f[dset_t_name].value[1:]
+	evo = f[dset_evo_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	evo_T1 = f[dset_evoT1_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -738,7 +738,7 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 	if file_flag:
 		f.close()
 	
-	color_dictionary_T1 = [myG,myM,myK]
+	color_dictionary_T1 = [myG, myM, myK]
 	evo_CompleteT1 = np.zeros((kmcSteps, 3), dtype=np.float_)
 	evo_CompleteT1[:, 0:2] = evo_T1
 	for i in range(16):
@@ -778,16 +778,18 @@ def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_doubleFreq_name = 'run{:d}/f_double'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	y0_16 = f[dset_evo_name].value[0, :] #starting state (16)
+	evo = f[dset_evo_name].value
 	doubleFreq = f[dset_doubleFreq_name].value
 	t = f[dset_t_name].value
+	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	if file_flag:
 		f.close()
 	
 	evo_dictionary_4vert = [3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3]
-	y0_4 = np.zeros(4, dtype=np.float_) #starting state (4)
+	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float_)
 	for i in range(16):
-		y0_4[evo_dictionary_4vert[i]] += y0_16[i]
+		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
+	y0_4 = evo_4vertices[0, :] #starting state (4 vertices)
 	
 	#- DICTIONARY -
 	# 0 - 11
@@ -865,12 +867,29 @@ def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 			label_text = 'T{:d} - M. Eq. {:.2f}'.format(i+1, noT1[1])
 		else:
 			label_text = 'T{:d} - M. Eq.'.format(i+1)
-		ax.semilogx(t, y_sol[:,i], '--', color=color_dictionary_4vert[i], linewidth=2, label=label_text)
+		#initial value skipped because of LOG plot (t=0 is not drawable)
+		ax.semilogx(t[1:], y_sol[1:, i], '--', color=color_dictionary_4vert[i], linewidth=2, label=label_text)
 	plt.xlabel('t (s)')
 	plt.ylabel('P(t)')
 	ax.set_ylim([0, 1])
 	ax.grid(True)
 	ax.legend(loc='best')
+	
+	if not(noT1[0]):
+		evo_diff_meq = evo_4vertices - y_sol
+		fig_diff = plt.figure(figsize=(12,12))
+		ax_diff = fig_diff.add_subplot(1,1,1)
+		for i in range(4):
+			#initial value skipped because of LOG plot (t=0 is not drawable)
+			ax_diff.semilogx(t[1:], evo_diff_meq[1:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d} - Diff.'.format(i+1))
+		ax_diff.axhline(0, color='k')
+		plt.title('Evolution vs M. Eq. for ' + ax.get_title())
+		plt.xlabel('t (s)')
+		plt.ylabel('P$_{Evo}$(t) - P$_{MEq}$(t)')
+		#ax_diff.set_ylim([0, 1])
+		ax_diff.grid(True)
+		ax_diff.legend(loc='best')
+	
 	plt.show()
 	return y0_4
 
