@@ -835,18 +835,19 @@ def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 		dyAnn[3] = 2*y[3]*y[3]*f[7,9] + y[3]*y[1]*f[7,6] + y[3]*y[0]*f[7,3] + y[3]*y[2]*(f[2,8] + f[5,8])
 		dyCre[3] = y[0]*y[2]*f[8,2] + y[1]*y[2]*f[8,5] + y[2]*y[2]*(2*f[9,7] + f[3,7] + f[6,7])
 		return (dyCre - dyAnn)
-	#Derivative function - No T1 ( y[0] = (c*(y[1]+y[2]+y[3])) )
+	#Derivative function - No T1 ( y[0] -> c*(y[1] + y[2] + y[3]) )
 	#Also y[3] could be added, but when domain forms, y[3] has already disappeared
 	def meq_func_noT1(y, t, f, c):
 		dyAnn = np.zeros(4, dtype=np.float_)
 		dyCre = np.zeros(4, dtype=np.float_)
 		#no y[0] evolution
-		dyAnn[1] = 2*y[1]*y[1]*f[7,4] + y[1]*(c*(y[1]+y[2]+y[3]))*f[7,1] + y[1]*y[3]*f[7,6] + y[1]*y[2]*(f[2,5] + f[8,5])
-		dyCre[1] = (c*(y[1]+y[2]+y[3]))*y[2]*f[5,2] + y[3]*y[2]*f[5,8] + y[2]*y[2]*(2*f[4,7] + f[1,7] + f[6,7])
+		my_y0 = c*(y[1] + y[2] + y[3])
+		dyAnn[1] = 2*y[1]*y[1]*f[7,4] + y[1]*my_y0*f[7,1] + y[1]*y[3]*f[7,6] + y[1]*y[2]*(f[2,5] + f[8,5])
+		dyCre[1] = my_y0*y[2]*f[5,2] + y[3]*y[2]*f[5,8] + y[2]*y[2]*(2*f[4,7] + f[1,7] + f[6,7])
 		dyAnn[2] = 2*y[2]*y[2]*(f[0,7] + f[4,7] + f[9,7] + f[3,7] + f[1,7] + f[6,7])
-		dyCre[2] = 2*((c*(y[1]+y[2]+y[3]))*(c*(y[1]+y[2]+y[3]))*f[7,0] + (c*(y[1]+y[2]+y[3]))*y[3]*f[7,3] + (c*(y[1]+y[2]+y[3]))*y[1]*f[7,1] + y[1]*y[1]*f[7,4] + y[1]*y[3]*f[7,6] + y[3]*y[3]*f[7,9])
-		dyAnn[3] = 2*y[3]*y[3]*f[7,9] + y[3]*y[1]*f[7,6] + y[3]*(c*(y[1]+y[2]+y[3]))*f[7,3] + y[3]*y[2]*(f[2,8] + f[5,8])
-		dyCre[3] = (c*(y[1]+y[2]+y[3]))*y[2]*f[8,2] + y[1]*y[2]*f[8,5] + y[2]*y[2]*(2*f[9,7] + f[3,7] + f[6,7])
+		dyCre[2] = 2*(my_y0*my_y0*f[7,0] + my_y0*y[3]*f[7,3] + my_y0*y[1]*f[7,1] + y[1]*y[1]*f[7,4] + y[1]*y[3]*f[7,6] + y[3]*y[3]*f[7,9])
+		dyAnn[3] = 2*y[3]*y[3]*f[7,9] + y[3]*y[1]*f[7,6] + y[3]*my_y0*f[7,3] + y[3]*y[2]*(f[2,8] + f[5,8])
+		dyCre[3] = my_y0*y[2]*f[8,2] + y[1]*y[2]*f[8,5] + y[2]*y[2]*(2*f[9,7] + f[3,7] + f[6,7])
 		return (dyCre - dyAnn)
 	#Solve the Diff. Eq. System
 	if noT1[0]:
@@ -855,7 +856,7 @@ def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	else:
 		y_sol = odeint(meq_func, y0_4, t, args=(freq_table,))
 	
-	color_dictionary_4vert = [myM,myC,myK,myO]
+	color_dictionary_4vert = [myM, myC, myK, myO]
 	if ax == '':
 		fig = plt.figure(figsize=(12,12))
 		ax = fig.add_subplot(1,1,1)
