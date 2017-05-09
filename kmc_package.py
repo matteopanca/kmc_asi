@@ -652,7 +652,7 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 	plt.show()
 
 #Plot the 4 vertices evolution (given the run)
-def plot_evo(input_name, run, image_flag=False, file_flag=True):
+def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -690,8 +690,8 @@ def plot_evo(input_name, run, image_flag=False, file_flag=True):
 	fig = plt.figure(figsize=(12,12))
 	ax = fig.add_subplot(1,1,1)
 	for i in range(4):
-		ax.semilogx(t, evo_4vertices[:,i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1))
-		#ax.plot(t, evo_4vertices[:,i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1))
+		ax.semilogx(t, evo_4vertices[:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1))
+		#ax.plot(t, evo_4vertices[:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1))
 	if run == -1 or run == -2:
 		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
 	else:
@@ -705,6 +705,17 @@ def plot_evo(input_name, run, image_flag=False, file_flag=True):
 	ax.grid(True)
 	ax.legend(loc='best')
 	plt.show()
+	
+	if save_evo:
+		ext_position = 1 + input_name[::-1].find('.')
+		out_name = input_name[:-ext_position] + '_run{:d}.txt'.format(run)
+		data_to_save = np.zeros((kmcSteps, 5), dtype=np.float_)
+		data_to_save[:, 0] = t
+		for i in range(4):
+			data_to_save[:, i+1] = evo_4vertices[:, i]
+		np.savetxt(out_name, data_to_save, fmt='%.8e', delimiter='\t')
+		print('Exported TXT file')
+	
 	return ax
 	
 #Plot the T1 phases evolution (given the run)
