@@ -602,6 +602,7 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 	
 	if type == 'v':
 		color_dictionary = [myY,myR,myR,myB,myR,myG,myB,myR,myR,myB,myG,myR,myB,myR,myR,myY]
+		#color_dictionary = [myY,myB,myB,myR,myB,myK,myR,myB,myB,myR,myK,myB,myR,myB,myB,myY] #PRL 111 057204 (2013)
 	elif type == '1':
 		color_dictionary = [myK,myK,myK,myK,myK,myG,myK,myK,myK,myK,myM,myK,myK,myK,myK,myK]
 	elif type == '2':
@@ -681,6 +682,7 @@ def plot_evo(input_name, run, image_flag=False, file_flag=True):
 	
 	evo_dictionary_4vert = [3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3]
 	color_dictionary_4vert = [myG, myB, myR, myY]
+	#color_dictionary_4vert = [myK, myR, myB, myY] #PRL 111 057204 (2013)
 	evo_4vertices = np.zeros((kmcSteps, 4), dtype=np.float_)
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
