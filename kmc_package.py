@@ -804,56 +804,6 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 	ax.legend(loc='best')
 	plt.show()
 
-#Plot the m evolution (given the run)
-def plot_m(input_name, run, image_flag=False, file_flag=True):
-	if file_flag:
-		f = h5py.File(input_name, 'r')
-	else:
-		f = input_name
-	if run == -1:
-		dset_evo_name = 'avg/evo'
-		dset_m_name = 'avg/m'
-		dset_t_name = 'avg/t'
-		multipleRuns = f[dset_evo_name].attrs['runs_for_avg']
-	elif run == -2:
-		dset_evo_name = 'merged/evo'
-		dset_m_name = 'merged/m'
-		dset_t_name = 'merged/t'
-		multipleRuns = f[dset_evo_name].attrs['merged_runs']
-	else:
-		dset_evo_name = 'run{:d}/evo'.format(run)
-		dset_m_name = 'run{:d}/m'.format(run)
-		dset_t_name = 'run{:d}/t'.format(run)
-	m = f[dset_m_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
-	rows, cols = f[dset_evo_name].attrs['dim']
-	if image_flag and run >= 0:
-		images_num = f[dset_evo_name].attrs['images']
-		x_coord = np.zeros(images_num-1, dtype=np.float_)
-		for i in range(images_num-1):
-			x_coord[i] = f['run{:d}/images/img{:d}'.format(run, i+1)].attrs['t']
-	if file_flag:
-		f.close()
-	
-	fig = plt.figure(figsize=(12,12))
-	ax = fig.add_subplot(1,1,1)
-	ax.semilogx(t, m, '-', color=myB, linewidth=2, label='Simulated M')
-	if run == -1 or run == -2:
-		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
-	else:
-		plt.title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
-	plt.xlabel('t (s)')
-	plt.ylabel('M along main diagonal (a.u.)')
-	ax.set_ylim([-1, 1])
-	ax.axhline(0, color='k')
-	if image_flag and run != -1:
-		for i in range(images_num-1):
-			ax.axvline(x_coord[i], color='k')
-	ax.grid(True)
-	ax.legend(loc='best')
-	plt.show()
-
 #Plot the 4 vertices MASTER EQUATION evolution given the run and optionally the axis (Simple DVA M. Eq.)
 def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	if file_flag:
@@ -982,6 +932,99 @@ def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	
 	plt.show()
 	return y0_4
+
+#Plot the m evolution (given the run)
+def plot_m(input_name, run, image_flag=False, file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	if run == -1:
+		dset_evo_name = 'avg/evo'
+		dset_m_name = 'avg/m'
+		dset_t_name = 'avg/t'
+		multipleRuns = f[dset_evo_name].attrs['runs_for_avg']
+	elif run == -2:
+		dset_evo_name = 'merged/evo'
+		dset_m_name = 'merged/m'
+		dset_t_name = 'merged/t'
+		multipleRuns = f[dset_evo_name].attrs['merged_runs']
+	else:
+		dset_evo_name = 'run{:d}/evo'.format(run)
+		dset_m_name = 'run{:d}/m'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+	m = f[dset_m_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
+	rows, cols = f[dset_evo_name].attrs['dim']
+	if image_flag and run >= 0:
+		images_num = f[dset_evo_name].attrs['images']
+		x_coord = np.zeros(images_num-1, dtype=np.float_)
+		for i in range(images_num-1):
+			x_coord[i] = f['run{:d}/images/img{:d}'.format(run, i+1)].attrs['t']
+	if file_flag:
+		f.close()
+	
+	fig = plt.figure(figsize=(12,12))
+	ax = fig.add_subplot(1,1,1)
+	ax.semilogx(t, m, '-', color=myB, linewidth=2, label='Simulated M')
+	if run == -1 or run == -2:
+		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
+	else:
+		plt.title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
+	plt.xlabel('t (s)')
+	plt.ylabel('M along main diagonal (a.u.)')
+	ax.set_ylim([-1.05, 1.05])
+	ax.axhline(0, color='k')
+	if image_flag and run != -1:
+		for i in range(images_num-1):
+			ax.axvline(x_coord[i], color='k')
+	ax.grid(True)
+	ax.legend(loc='best')
+	plt.show()
+	
+	return ax
+
+#Fit of the magnetization evolution (given the run)
+def fit_m(input_name, run, ax, limits=(0, -1), file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	if run == -1:
+		dset_m_name = 'avg/m'
+		dset_t_name = 'avg/t'
+	elif run == -2:
+		dset_m_name = 'merged/m'
+		dset_t_name = 'merged/t'
+	else:
+		dset_m_name = 'run{:d}/m'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+	m = f[dset_m_name].value
+	t = f[dset_t_name].value
+	if file_flag:
+		f.close()
+	
+	if limits[1] > limits[0]:
+		low_limit = t >= limits[0]
+		high_limit = t <= limits[1]
+		t = t[low_limit & high_limit]
+		m = m[low_limit & high_limit]
+		startIndex_plot = 0
+	else:
+		startIndex_plot = 1
+	
+	def stretchedExp_func(x, a, b, c):
+		return a*np.exp(-(x/b)**c)
+	
+	popt, pcov = curve_fit(stretchedExp_func, t, m, p0=(1, (t[0]+t[-1])/2., 0.5))
+	fitted_m = stretchedExp_func(t, *popt)
+	print('M0 = {:.4e}'.format(popt[0]))
+	print('Time Const. (s) = {:.4e}'.format(popt[1]))
+	print('Stretching exponent = {:.4e}'.format(popt[2]))
+	
+	ax.semilogx(t[startIndex_plot:], fitted_m[startIndex_plot:], '--', color=myR, linewidth=2, label='Fitted M')
+	plt.show()
 
 #Histogram of dt (and hopefully fit)
 def time_stats(input_name, run, num_bins=100, file_flag=True):
