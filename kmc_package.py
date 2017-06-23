@@ -1,6 +1,10 @@
+#---------- List of CHANGES ----------
+#From 06/04/2017 on --->
 #H5PY removed from the Array Class
 #"Energy coefficient" inserted after Jonathan's analysis
-#From 06/04/2017 on
+#From 23/06/2017 on --->
+#Magnetization evolution along the diagonal
+#-------------------------------------
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -73,6 +77,7 @@ class Array:
 		self.evolution = np.zeros((self.input_kmcSteps+1, 16), dtype=np.float_)
 		self.evolution_T1 = np.zeros((self.input_kmcSteps+1, 2), dtype=np.float_)
 		self.t = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
+		self.m = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
 		self.map = np.zeros((self.input_rows, self.input_cols), dtype=np.int_)
 		self.index_saveImg = np.int_(np.round(np.power(10, np.linspace(0, np.log10(self.input_kmcSteps), self.input_images)))-1)
 		self.index_saveImg = np.unique(self.index_saveImg)
@@ -110,6 +115,7 @@ class Array:
 		self.evolution = np.zeros((self.input_kmcSteps+1, 16), dtype=np.float_)
 		self.evolution_T1 = np.zeros((self.input_kmcSteps+1, 2), dtype=np.float_)
 		self.t = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
+		self.m = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
 		self.map = old_obj.map
 		self.index_saveImg = np.int_(np.round(np.power(10, np.linspace(0, np.log10(self.input_kmcSteps), self.input_images)))-1)
 		self.index_saveImg = np.unique(self.index_saveImg)
@@ -121,6 +127,7 @@ class Array:
 		self.evolution[0, :] = old_obj.evolution[-1, :]*self.input_rows*self.input_cols
 		self.evolution_T1[0, :] = old_obj.evolution_T1[-1, :]*self.input_rows*self.input_cols
 		self.t[0] = old_obj.t[-1]
+		self.m[0] = old_obj.m[-1]
 		
 		#Initialize list_freq and list_partialSum
 		for i in range(self.totEl):
@@ -382,7 +389,7 @@ class Array:
 			for i in range(self.totEl):
 				self.list[i].dir = rand_gen[i]
 
-	#Count the vertices and initialize the map - initialize list_freq and list_partialSum
+	#Count the vertices and initialize the map - initialize list_freq and list_partialSum - calculate the initial magnetization
 	def identify_array(self):
 		#Count the vertices and initialize the map
 		for i in range(self.input_rows):
@@ -398,6 +405,10 @@ class Array:
 		self.list_partialSum[0] = self.list_freq[0]
 		for i in range(self.totEl-1):
 			self.list_partialSum[i+1] = self.list_partialSum[i] + self.list_freq[i+1]
+		
+		#Calculate the initial magnetization m[0]
+		for i in range(self.totEl):
+			self.m[0] += 2*self.list[i].dir - 1
 	
 	#Time evolution (for kmcSteps) and saving the output 
 	def run(self, run_id=-1):
@@ -418,8 +429,10 @@ class Array:
 			island_to_flip = self.get_event_index(rand_island[i])
 			#Update evo and map
 			self.update_evo(i, island_to_flip)
-			#Flip the island in list
-			self.list[island_to_flip].dir = abs(self.list[island_to_flip].dir - 1)
+			#Flip the island in list and update m
+			self.m[i+1] = self.m[i] - (2*self.list[island_to_flip].dir - 1)
+			self.list[island_to_flip].dir = abs(self.list[island_to_flip].dir - 1) #flip the island
+			self.m[i+1] += 2*self.list[island_to_flip].dir - 1
 			#Update list_freq
 			self.list_freq[island_to_flip] = self.get_freq(island_to_flip)
 			for j in range(self.list[island_to_flip].neigh_num):
@@ -438,6 +451,7 @@ class Array:
 		self.input_timeLimit = self.t[-1] - self.t[0]
 		self.evolution /= self.input_rows*self.input_cols
 		self.evolution_T1 /= self.input_rows*self.input_cols
+		self.m /= self.totEl
 
 #-------------------- SAVE Function --------------------
 
@@ -460,6 +474,9 @@ def save_evolution(f, obj):
 	
 	dset_t_name = 'run{:d}/t'.format(obj.input_run)
 	dset_t = f.create_dataset(dset_t_name, data=obj.t)
+	
+	dset_m_name = 'run{:d}/m'.format(obj.input_run)
+	dset_m = f.create_dataset(dset_m_name, data=obj.m)
 	
 	dset_evoT1_name = 'run{:d}/evo_T1'.format(obj.input_run)
 	dset_evoT1 = f.create_dataset(dset_evoT1_name, data=obj.evolution_T1)
@@ -506,14 +523,17 @@ def avg_runs(f):
 	kmcSteps = f['run0/evo'].attrs['kmcSteps']
 	evolution_avg = np.zeros((kmcSteps+1, 16), dtype=np.float_)
 	evolutionT1_avg = np.zeros((kmcSteps+1, 2), dtype=np.float_)
+	m_avg = np.zeros(kmcSteps+1, dtype=np.float_)
 	for run in range(num_runs):
 		evolution_run = f['run{:d}/evo'.format(run)].value
 		evolutionT1_run = f['run{:d}/evo_T1'.format(run)].value
 		t_run = f['run{:d}/t'.format(run)].value
+		m_run = f['run{:d}/m'.format(run)].value
 		for i in range(16):
 			evolution_avg[:, i] += np.interp(t_avg, t_run, evolution_run[:, i])
 		for i in range(2):
 			evolutionT1_avg[:, i] += np.interp(t_avg, t_run, evolutionT1_run[:, i])
+		m_avg += m_run
 	
 	#Save the avg run in the same HDF5 file
 	dset_evo_avg = f.create_dataset('avg/evo', data=evolution_avg/num_runs)
@@ -529,6 +549,7 @@ def avg_runs(f):
 	dset_evo_avg.attrs['timeLimit'] = t_avg[-1]
 	dset_evo_avg.attrs['runs_for_avg'] = num_runs
 	dset_t_avg = f.create_dataset('avg/t', data=t_avg)
+	dset_m_avg = f.create_dataset('avg/m', data=m_avg/num_runs)
 	dset_evoT1_avg = f.create_dataset('avg/evo_T1', data=evolutionT1_avg/num_runs)
 	dset_doubleFreq_avg = f.create_dataset('avg/f_double', data=f['run0/f_double'].value)
 	dset_doubleFreq_avg.attrs['input_double'] = f['run0/f_double'].attrs['input_double']
@@ -551,21 +572,26 @@ def merge_runs(f):
 	evolution_merged = np.zeros((kmcSteps_tot+1, 16), dtype=np.float_)
 	evolutionT1_merged = np.zeros((kmcSteps_tot+1, 2), dtype=np.float_)
 	t_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
+	m_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
 	evolution_run = f['run0/evo'].value
 	evolutionT1_run = f['run0/evo_T1'].value
 	t_run = f['run0/t'].value
+	m_run = f['run0/m'].value
 	evolution_merged[0:kmcSteps[0]+1, :] = evolution_run
 	evolutionT1_merged[0:kmcSteps[0]+1, :] = evolutionT1_run
 	t_merged[0:kmcSteps[0]+1] = t_run
+	m_merged[0:kmcSteps[0]+1] = m_run
 	start_index = kmcSteps[0] + 1
 	for run in range(num_runs-1):
 		stop_index = start_index + kmcSteps[run+1]
 		evolution_run = f['run{:d}/evo'.format(run+1)].value
 		evolutionT1_run = f['run{:d}/evo_T1'.format(run+1)].value
 		t_run = f['run{:d}/t'.format(run+1)].value
+		m_run = f['run{:d}/m'.format(run+1)].value
 		evolution_merged[start_index:stop_index, :] = evolution_run[1:, :]
 		evolutionT1_merged[start_index:stop_index, :] = evolutionT1_run[1:, :]
 		t_merged[start_index:stop_index] = t_run[1:]
+		m_merged[start_index:stop_index] = m_run[1:]
 		start_index = stop_index
 		
 	#Save the merged run in the same HDF5 file
@@ -580,6 +606,7 @@ def merge_runs(f):
 	dset_evo_merged.attrs['timeLimit'] = t_merged[-1]
 	dset_evo_merged.attrs['merged_runs'] = num_runs
 	dset_t_merged = f.create_dataset('merged/t', data=t_merged)
+	dset_m_merged = f.create_dataset('merged/m', data=m_merged)
 	dset_evoT1_merged = f.create_dataset('merged/evo_T1', data=evolutionT1_merged)
 	print('MERGED group created ({:d} runs)'.format(num_runs))
 
@@ -770,6 +797,56 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 	plt.xlabel('t (s)')
 	plt.ylabel('P(t)')
 	ax.set_ylim([0, 1])
+	if image_flag and run != -1:
+		for i in range(images_num-1):
+			ax.axvline(x_coord[i], color='k')
+	ax.grid(True)
+	ax.legend(loc='best')
+	plt.show()
+
+#Plot the m evolution (given the run)
+def plot_m(input_name, run, image_flag=False, file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	if run == -1:
+		dset_evo_name = 'avg/evo'
+		dset_m_name = 'avg/m'
+		dset_t_name = 'avg/t'
+		multipleRuns = f[dset_evo_name].attrs['runs_for_avg']
+	elif run == -2:
+		dset_evo_name = 'merged/evo'
+		dset_m_name = 'merged/m'
+		dset_t_name = 'merged/t'
+		multipleRuns = f[dset_evo_name].attrs['merged_runs']
+	else:
+		dset_evo_name = 'run{:d}/evo'.format(run)
+		dset_m_name = 'run{:d}/m'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+	m = f[dset_m_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
+	rows, cols = f[dset_evo_name].attrs['dim']
+	if image_flag and run >= 0:
+		images_num = f[dset_evo_name].attrs['images']
+		x_coord = np.zeros(images_num-1, dtype=np.float_)
+		for i in range(images_num-1):
+			x_coord[i] = f['run{:d}/images/img{:d}'.format(run, i+1)].attrs['t']
+	if file_flag:
+		f.close()
+	
+	fig = plt.figure(figsize=(12,12))
+	ax = fig.add_subplot(1,1,1)
+	ax.semilogx(t, m, '-', color=myB, linewidth=2, label='Simulated M')
+	if run == -1 or run == -2:
+		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
+	else:
+		plt.title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
+	plt.xlabel('t (s)')
+	plt.ylabel('M along main diagonal (a.u.)')
+	ax.set_ylim([-1, 1])
+	ax.axhline(0, color='k')
 	if image_flag and run != -1:
 		for i in range(images_num-1):
 			ax.axvline(x_coord[i], color='k')
