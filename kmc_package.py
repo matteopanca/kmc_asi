@@ -735,7 +735,7 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	
 	if save_evo:
 		ext_position = 1 + input_name[::-1].find('.')
-		out_name = input_name[:-ext_position] + '_run{:d}.txt'.format(run)
+		out_name = input_name[:-ext_position] + '_Evo_run{:d}.txt'.format(run)
 		data_to_save = np.zeros((kmcSteps, 5), dtype=np.float_)
 		data_to_save[:, 0] = t
 		for i in range(4):
@@ -934,7 +934,7 @@ def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	return y0_4
 
 #Plot the m evolution (given the run)
-def plot_m(input_name, run, image_flag=False, file_flag=True):
+def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -974,7 +974,7 @@ def plot_m(input_name, run, image_flag=False, file_flag=True):
 		plt.title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
 	plt.xlabel('t (s)')
 	plt.ylabel('M along main diagonal (a.u.)')
-	ax.set_ylim([-1.05, 1.05])
+	ax.set_ylim([m.min()-0.05, m.max()+0.05])
 	ax.axhline(0, color='k')
 	if image_flag and run != -1:
 		for i in range(images_num-1):
@@ -983,10 +983,20 @@ def plot_m(input_name, run, image_flag=False, file_flag=True):
 	ax.legend(loc='best')
 	plt.show()
 	
+	if save_m:
+		ext_position = 1 + input_name[::-1].find('.')
+		out_name = input_name[:-ext_position] + '_M_run{:d}.txt'.format(run)
+		
+		data_to_save = np.zeros((kmcSteps, 2), dtype=np.float_)
+		data_to_save[:, 0] = t
+		data_to_save[:, 1] = m
+		np.savetxt(out_name, data_to_save, fmt='%.8e', delimiter='\t')
+		print('Exported TXT file')
+	
 	return ax
 
 #Fit of the magnetization evolution (given the run)
-def fit_m(input_name, run, ax, limits=(0, -1), file_flag=True):
+def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1016,15 +1026,36 @@ def fit_m(input_name, run, ax, limits=(0, -1), file_flag=True):
 	
 	def stretchedExp_func(x, a, b, c):
 		return a*np.exp(-(x/b)**c)
+	def doubleExp_func(x, a, b, c, d):
+		return (a*np.exp(-x/b) + c*np.exp(-x/d))
 	
-	popt, pcov = curve_fit(stretchedExp_func, t, m, p0=(1, (t[0]+t[-1])/2., 0.5))
-	fitted_m = stretchedExp_func(t, *popt)
-	print('M0 = {:.4e}'.format(popt[0]))
-	print('Time Const. (s) = {:.4e}'.format(popt[1]))
-	print('Stretching exponent = {:.4e}'.format(popt[2]))
+	if type == 'str':
+		legend_label = 'Fitted M - Stretched'
+		color = myR
+		popt, pcov = curve_fit(stretchedExp_func, t, m, p0=(1, (t[0]+t[-1])/2., 0.5), bounds=([-np.inf, 0, 0], np.inf))
+		fitted_m = stretchedExp_func(t, *popt)
+		print('M0 = {:.4e}'.format(popt[0]))
+		print('Time Const. (s) = {:.4e}'.format(popt[1]))
+		print('Stretching exponent = {:.4e}'.format(popt[2]))
+	elif type == 'double':
+		legend_label = 'Fitted M - Double'
+		color = myG
+		popt, pcov = curve_fit(doubleExp_func, t, m, p0=(1, (t[0]+t[-1])/2., 1, (t[0]+t[-1])/20.), bounds=([-np.inf, 0, -np.inf, 0], np.inf))
+		fitted_m = doubleExp_func(t, *popt)
+		print('M0 A = {:.4e}'.format(popt[0]))
+		print('Time Const. A (s) = {:.4e}'.format(popt[1]))
+		print('M0 B = {:.4e}'.format(popt[2]))
+		print('Time Const. B (s) = {:.4e}'.format(popt[3]))
+	else:
+		print('Fit function NOT defined')
+		return (0, 0)
 	
-	ax.semilogx(t[startIndex_plot:], fitted_m[startIndex_plot:], '--', color=myR, linewidth=2, label='Fitted M')
+	ax.semilogx(t[startIndex_plot:], fitted_m[startIndex_plot:], '--', color=color, linewidth=2, label=legend_label)
+	ax.legend(loc='best')
 	plt.show()
+	
+	perr = np.sqrt(np.diag(pcov)) #one standard deviation errors on the parameters
+	return popt, perr
 
 #Histogram of dt (and hopefully fit)
 def time_stats(input_name, run, num_bins=100, file_flag=True):
