@@ -369,7 +369,7 @@ class Array:
 					if (self.list[i].address[0]%2) != 0:
 						if (self.list[i].address[1]%2) != 0:
 							self.list[i].dir = 0
-			if self.input_init == '4':
+			elif self.input_init == '4':
 				for i in range(self.totEl):
 					if (self.list[i].address[0]%4) == 0:
 						if (self.list[i].address[1]%2) != 0:
@@ -384,6 +384,10 @@ class Array:
 						elif ((self.list[i].address[0]-1)%2) == 0:
 							if (self.list[i].address[1]%2) == 0:
 								self.list[i].dir = 0
+			elif self.input_init == '2m':
+				for i in range(0, 2*self.input_rows+1, 2): #VERTICAL islands; see "generate_array" method
+					for j in range(round(self.input_cols/2)):
+						self.list[self.get_address_linear([i, j])].dir = 0
 		if self.input_init == 'r':
 			rand_gen = np.random.randint(2, size=self.totEl)
 			for i in range(self.totEl):

@@ -6,7 +6,7 @@
 6) Energy rescaling coeff. (Single)
 7) Number of Vertex rows
 8) Number of Vertex columns
-9) Initial condition ('1', '2', '3', '4' or 'r')
+9) Initial condition ('1', '2', '2m', '3', '4' or 'r')
 10) Boundary condition ('finite' or 'pbc')
 11) Standard Deviation for introducing disorder (with respect to barrier energies)
 12) Number of KMC steps
