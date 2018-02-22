@@ -544,7 +544,6 @@ def avg_runs(f):
 	dset_evo_avg.attrs['dim'] = f['run0/evo'].attrs['dim']
 	dset_evo_avg.attrs['init'] = f['run0/evo'].attrs['init']
 	dset_evo_avg.attrs['attempt_freq'] = f['run0/evo'].attrs['attempt_freq']
-	dset_evo_avg.attrs['energy_coeff'] = f['run0/evo'].attrs['energy_coeff']
 	dset_evo_avg.attrs['disorder'] = f['run0/evo'].attrs['disorder']
 	dset_evo_avg.attrs['kmcSteps'] = kmcSteps
 	dset_evo_avg.attrs['timeLimit'] = t_avg[-1]
@@ -555,11 +554,9 @@ def avg_runs(f):
 	dset_doubleFreq_avg = f.create_dataset('avg/f_double', data=f['run0/f_double'].value)
 	dset_doubleFreq_avg.attrs['input_double'] = f['run0/f_double'].attrs['input_double']
 	dset_doubleFreq_avg.attrs['attempt_freq'] = f['run0/f_double'].attrs['attempt_freq']
-	dset_doubleFreq_avg.attrs['energy_coeff'] = f['run0/f_double'].attrs['energy_coeff']
 	dset_singleFreq_avg = f.create_dataset('avg/f_single', data=f['run0/f_single'].value)
 	dset_singleFreq_avg.attrs['input_single'] = f['run0/f_single'].attrs['input_single']
 	dset_singleFreq_avg.attrs['attempt_freq'] = f['run0/f_single'].attrs['attempt_freq']
-	dset_singleFreq_avg.attrs['energy_coeff'] = f['run0/f_single'].attrs['energy_coeff']
 	print('AVG group created ({:d} runs)'.format(num_runs))
 
 #Merge ALL the runs in a given HDF5 file
@@ -601,7 +598,6 @@ def merge_runs(f):
 	dset_evo_merged.attrs['dim'] = f['run0/evo'].attrs['dim']
 	dset_evo_merged.attrs['init'] = f['run0/evo'].attrs['init']
 	dset_evo_merged.attrs['attempt_freq'] = f['run0/evo'].attrs['attempt_freq']
-	dset_evo_merged.attrs['energy_coeff'] = f['run0/evo'].attrs['energy_coeff']
 	dset_evo_merged.attrs['disorder'] = f['run0/evo'].attrs['disorder']
 	dset_evo_merged.attrs['kmcSteps'] = kmcSteps_tot
 	dset_evo_merged.attrs['timeLimit'] = t_merged[-1]
