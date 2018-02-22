@@ -4,8 +4,6 @@
 #"Energy coefficient" inserted after Jonathan's analysis
 #From 23/06/2017 on --->
 #Magnetization evolution along the diagonal
-#From 22/02/2018 on --->
-#Removed "Energy coefficient", since we need a more complex analysis
 #-------------------------------------
 
 import numpy as np
@@ -55,19 +53,20 @@ class Array:
 		self.input_double = input_list[0] #File with DOUBLE Probs.
 		self.input_single = input_list[1] #File with SINGLE Probs.
 		self.input_attemptFreq = (input_list[2], input_list[3]) #Attempt frequency - (Double, Single) (Hz)
-		self.input_rows = input_list[4] #Vertices in each row
-		self.input_cols = input_list[5] #Vertices in each column
-		self.input_init = input_list[6] #Init type ('1', '2', '3', '4' or 'r')
-		self.input_boundary = input_list[7] #Boundary conditions: 'finite' (default) or 'pbc'
-		self.input_disorderStDev = input_list[8] #Standard Deviation for disorder
-		self.input_kmcSteps = input_list[9] #Steps for each run
-		self.input_timeLimit = input_list[10] #Time limit (s) for each run
-		self.input_images = input_list[11] #Number of images to be saved
+		self.input_energyCoeff = (input_list[4], input_list[5]) #Energy rescaling coeff. - (Double, Single)
+		self.input_rows = input_list[6] #Vertices in each row
+		self.input_cols = input_list[7] #Vertices in each column
+		self.input_init = input_list[8] #Init type ('1', '2', '3', '4' or 'r')
+		self.input_boundary = input_list[9] #Boundary conditions: 'finite' (default) or 'pbc'
+		self.input_disorderStDev = input_list[10] #Standard Deviation for disorder
+		self.input_kmcSteps = input_list[11] #Steps for each run
+		self.input_timeLimit = input_list[12] #Time limit (s) for each run
+		self.input_images = input_list[13] #Number of images to be saved
 		self.input_run = -1 #Progressive run number
 		
 		#Generate related quantities
-		self.freq_double = self.input_attemptFreq[0]*input_prob[0]
-		self.freq_single = self.input_attemptFreq[1]*input_prob[1]
+		self.freq_double = self.input_attemptFreq[0]*(input_prob[0]**self.input_energyCoeff[0])
+		self.freq_single = self.input_attemptFreq[1]*(input_prob[1]**self.input_energyCoeff[1])
 		if self.input_boundary == 'pbc': #pbc
 			self.totEl = 2*self.input_rows*self.input_cols
 		else: #finite
@@ -95,19 +94,20 @@ class Array:
 		self.input_double = input_list[0] #File with DOUBLE Probs.
 		self.input_single = input_list[1] #File with SINGLE Probs.
 		self.input_attemptFreq = old_obj.input_attemptFreq #Attempt frequency - [Double, Single] (Hz)
+		self.input_energyCoeff = old_obj.input_energyCoeff #Energy rescaling coeff. - [Double, Single]
 		self.input_rows = old_obj.input_rows #Vertices in each row
 		self.input_cols = old_obj.input_cols #Vertices in each column
 		self.input_init = old_obj.input_init #Init type ('1', '2', '3', '4' or 'r')
 		self.input_boundary = old_obj.input_boundary #Boundary conditions: 'finite' (default) or 'pbc'
-		self.input_disorderStDev = input_list[8] #Standard Deviation for disorder
-		self.input_kmcSteps = input_list[9] #Steps for each run
-		self.input_timeLimit = input_list[10] #Time limit (s) for each run
-		self.input_images = input_list[11] #Number of images to be saved
+		self.input_disorderStDev = input_list[10] #Standard Deviation for disorder
+		self.input_kmcSteps = input_list[11] #Steps for each run
+		self.input_timeLimit = input_list[12] #Time limit (s) for each run
+		self.input_images = input_list[13] #Number of images to be saved
 		self.input_run = -1 #Progressive run number
 		
 		#Generate related quantities
-		self.freq_double = self.input_attemptFreq[0]*input_prob[0]
-		self.freq_single = self.input_attemptFreq[1]*input_prob[1]
+		self.freq_double = self.input_attemptFreq[0]*(input_prob[0]**self.input_energyCoeff[0])
+		self.freq_single = self.input_attemptFreq[1]*(input_prob[1]**self.input_energyCoeff[1])
 		self.totEl = old_obj.totEl
 		self.list = old_obj.list #The array as a collection of BasicUnit objects
 		self.list_freq = np.zeros(self.totEl, dtype=np.float_)
@@ -473,6 +473,7 @@ def save_evolution(f, obj):
 	dset_evo.attrs['timeLimit'] = obj.input_timeLimit
 	dset_evo.attrs['images'] = obj.input_images
 	dset_evo.attrs['attempt_freq'] = obj.input_attemptFreq
+	dset_evo.attrs['energy_coeff'] = obj.input_energyCoeff
 	dset_evo.attrs['disorder'] = obj.input_disorderStDev
 	
 	dset_t_name = 'run{:d}/t'.format(obj.input_run)
@@ -488,11 +489,13 @@ def save_evolution(f, obj):
 	dset_doubleFreq = f.create_dataset(dset_doubleFreq_name, data=obj.freq_double)
 	dset_doubleFreq.attrs['input_double'] = obj.input_double
 	dset_doubleFreq.attrs['attempt_freq'] = obj.input_attemptFreq[0]
+	dset_doubleFreq.attrs['energy_coeff'] = obj.input_energyCoeff[0]
 	
 	dset_singleFreq_name = 'run{:d}/f_single'.format(obj.input_run)
 	dset_singleFreq = f.create_dataset(dset_singleFreq_name, data=obj.freq_single)
 	dset_singleFreq.attrs['input_single'] = obj.input_single
 	dset_singleFreq.attrs['attempt_freq'] = obj.input_attemptFreq[1]
+	dset_singleFreq.attrs['energy_coeff'] = obj.input_energyCoeff[1]
 	
 	for i in range(obj.input_images):
 		dset_image_name = 'run{:d}/images/img{:d}'.format(obj.input_run, i)

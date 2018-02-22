@@ -20,8 +20,6 @@ for i in range(len(file_list)):
 		control_list.append(f.readline().rstrip()) #File with SINGLE Probs.
 		control_list.append(float(f.readline().rstrip())) #Attempt frequency - Double (Hz)
 		control_list.append(float(f.readline().rstrip())) #Attempt frequency - Single (Hz)
-		control_list.append(float(f.readline().rstrip())) #Energy rescaling coeff. (Double)
-		control_list.append(float(f.readline().rstrip())) #Energy rescaling coeff. (Single)
 		control_list.append(int(f.readline().rstrip())) #Vertices in each row
 		control_list.append(int(f.readline().rstrip())) #Vertices in each column
 		control_list.append(f.readline().rstrip()) #Init type ('1', '2', '3', '4' or 'r')
