@@ -28,6 +28,27 @@ myC = '#00f7f7'
 myO = '#ffa500'
 myGG = '#b0b0b0'
 
+evo_dictionary_4vert = np.array([3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3])
+#- DICTIONARY -
+# 0 - 11
+# 1 - 12
+# 2 - 13
+# 3 - 14
+# 4 - 22
+# 5 - 23
+# 6 - 24
+# 7 - 33
+# 8 - 34
+# 9 - 44
+#-------------
+string_trans = ('11','12','13','14','22','23','24','33','34','44')
+list_trans = np.array([
+	[0, 1, 2, 3],
+	[1, 4, 5, 6],
+	[2, 5, 7, 8],
+	[3, 6, 8, 9]
+])
+
 #-------------------- CLASS Definitions --------------------
 
 #Container for an island composing the array
@@ -226,10 +247,12 @@ class Array:
 			vertex_type1 = self.extract_code(vertex_mask1)
 			vertex_mask2 = self.get_vertexMask(address2)
 			vertex_type2 = self.extract_code(vertex_mask2)
+			
 			self.evolution[index+1, vertex_type1] -= 1
 			self.evolution[index+1, vertex_type2] -= 1
 			self.update_evoT1(index+1, map_position1, vertex_type1, -1)
 			self.update_evoT1(index+1, map_position2, vertex_type2, -1)
+			
 			vertex_mask1[pos_mask1] = abs(vertex_mask1[pos_mask1] - 1)
 			vertex_type1 = self.extract_code(vertex_mask1)
 			vertex_mask2[pos_mask2] = abs(vertex_mask2[pos_mask2] - 1)
@@ -256,8 +279,10 @@ class Array:
 			map_position1 = [np.int_((address1[0]-1)/2), address1[1]]
 			vertex_mask1 = self.get_vertexMask(address1)
 			vertex_type1 = self.extract_code(vertex_mask1)
+			
 			self.evolution[index+1, vertex_type1] -= 1
 			self.update_evoT1(index+1, map_position1, vertex_type1, -1)
+			
 			vertex_mask1[pos_mask1] = abs(vertex_mask1[pos_mask1] - 1)
 			vertex_type1 = self.extract_code(vertex_mask1)
 			self.evolution[index+1, vertex_type1] += 1
@@ -609,6 +634,68 @@ def merge_runs(f):
 
 #-------------------- DRAWING Functions --------------------
 
+#Draw a map with the "bulk" transition distribution (given the run)
+def draw_trans(input_name, run, time_range=(0, -1), cmap_name='bwr', file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	if run == -2:
+		dset_evo_name = 'merged/evo'
+		dset_t_name = 'merged/t'
+		multipleRuns = f[dset_evo_name].attrs['merged_runs']
+	else:
+		run = np.abs(run)
+		dset_evo_name = 'run{:d}/evo'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+	evo = f[dset_evo_name].value
+	t = f[dset_t_name].value
+	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
+	rows, cols = f[dset_evo_name].attrs['dim']
+	if file_flag:
+		f.close()
+	
+	if time_range[0] > time_range[-1]:
+		evo_to_consider = evo
+		n_trans = kmcSteps
+	else:
+		bool_range = np.logical_and(t >= time_range[0], t < time_range[1])
+		evo_to_consider = evo[bool_range, :]
+		n_trans = np.sum(bool_range) - 1
+	
+	evo_diff = (rows*cols*np.diff(evo_to_consider, axis=0)).astype(np.int_)
+	flag_4 = np.sum(np.abs(evo_diff), axis=1)
+	n_trans_double = np.sum(flag_4 == 4)
+	print('Percentage of bulk transitions: {:.3f} %'.format(100*n_trans_double/n_trans))
+	
+	transitions = np.zeros((11, 11), dtype=np.float_) #for properly drawing...
+	for i in np.arange(n_trans):
+		if flag_4[i] == 4:
+			pos_indices = evo_dictionary_4vert[evo_diff[i, :] > 0]
+			if np.size(pos_indices) == 2:
+				end_index = list_trans[pos_indices[0], pos_indices[1]]
+			else:
+				end_index = list_trans[pos_indices[0], pos_indices[0]]
+			neg_indices = evo_dictionary_4vert[evo_diff[i, :] < 0]
+			if np.size(neg_indices) == 2:
+				start_index = list_trans[neg_indices[0], neg_indices[1]]
+			else:
+				start_index = list_trans[neg_indices[0], neg_indices[0]]
+			transitions[end_index, start_index] += 1
+	transitions /= n_trans_double
+	
+	fig = plt.figure(figsize=(10,8))
+	ax = fig.add_subplot(1,1,1)
+	cmesh = ax.pcolormesh(np.arange(11)-0.5, np.arange(11)-0.5, transitions, edgecolor='k', cmap=plt.get_cmap(cmap_name))
+	plt.colorbar(cmesh)
+	plt.xticks(np.arange(10), string_trans)
+	plt.yticks(np.arange(10), string_trans)
+	plt.title('{:d} x {:d} Vertices - Run {:d} - Considered trans. = {:d}/{:d}'.format(rows, cols, run, n_trans_double, n_trans))
+	ax.axis('scaled')
+	plt.xlabel('FROM')
+	plt.ylabel('TO')
+	plt.show()
+
 #Draw colored map (given the run and the image num.)
 def draw_map(input_name, run, image, type='v', file_flag=True):
 	if file_flag:
@@ -704,7 +791,6 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	if file_flag:
 		f.close()
 	
-	evo_dictionary_4vert = [3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3]
 	color_dictionary_4vert = [myG, myB, myR, myY]
 	#color_dictionary_4vert = [myK, myR, myB, myY] #PRL 111 057204 (2013)
 	evo_4vertices = np.zeros((kmcSteps, 4), dtype=np.float_)
@@ -822,7 +908,6 @@ def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	if file_flag:
 		f.close()
 	
-	evo_dictionary_4vert = [3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3]
 	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float_)
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
