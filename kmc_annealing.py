@@ -33,7 +33,7 @@ for i in range(len(file_list)):
 	prob_double = np.loadtxt(control_list[0], dtype=np.float_)
 	prob_single = np.loadtxt(control_list[1], dtype=np.float_)
 
-	#Running the simulation (num_runs times)
+	#Running the simulation (ignoring num_runs)
 	if i == 0:
 		output_file = h5py.File(output_name, 'w')
 		previousObj = kmc.Array(control_list, (prob_double, prob_single))

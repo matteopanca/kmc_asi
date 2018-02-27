@@ -107,6 +107,9 @@ class Array:
 		self.img_step = np.zeros(self.input_images, dtype=np.int_)
 		self.img_archive = np.zeros((self.input_rows, self.input_cols, self.input_images), dtype=np.int_)
 		
+		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
+		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
+		
 		#Methods for initializing the array
 		self.generate_array()
 		self.fill_array()
@@ -143,6 +146,9 @@ class Array:
 		self.input_images = len(self.index_saveImg) + 1
 		self.img_step = np.zeros(self.input_images, dtype=np.int_)
 		self.img_archive = np.zeros((self.input_rows, self.input_cols, self.input_images), dtype=np.int_)
+		
+		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
+		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
 		
 		#Initialize the "new" evolution
 		self.evolution[0, :] = old_obj.evolution[-1, :]*self.input_rows*self.input_cols
@@ -247,11 +253,11 @@ class Array:
 			vertex_type1 = self.extract_code(vertex_mask1)
 			vertex_mask2 = self.get_vertexMask(address2)
 			vertex_type2 = self.extract_code(vertex_mask2)
-			
 			self.evolution[index+1, vertex_type1] -= 1
 			self.evolution[index+1, vertex_type2] -= 1
 			self.update_evoT1(index+1, map_position1, vertex_type1, -1)
 			self.update_evoT1(index+1, map_position2, vertex_type2, -1)
+			start_trans = list_trans_double[evo_dictionary_4vert[vertex_type1], evo_dictionary_4vert[vertex_type2]]
 			
 			vertex_mask1[pos_mask1] = abs(vertex_mask1[pos_mask1] - 1)
 			vertex_type1 = self.extract_code(vertex_mask1)
@@ -263,6 +269,7 @@ class Array:
 			self.update_evoT1(index+1, map_position2, vertex_type2, 1)
 			self.map[map_position1[0], map_position1[1]] = vertex_type1
 			self.map[map_position2[0], map_position2[1]] = vertex_type2
+			self.trans_double[index, :] = np.array([start_trans, list_trans_double[evo_dictionary_4vert[vertex_type1], evo_dictionary_4vert[vertex_type2]]], dtype=np.int_)
 		else: #Boundary islands for 'fixed' boundary conditions
 			if self.list[itf].address[0] == 0:
 				address1 = self.list[self.list[itf].neigh_list[0]].address #BOTTOM Row
@@ -279,15 +286,16 @@ class Array:
 			map_position1 = [np.int_((address1[0]-1)/2), address1[1]]
 			vertex_mask1 = self.get_vertexMask(address1)
 			vertex_type1 = self.extract_code(vertex_mask1)
-			
 			self.evolution[index+1, vertex_type1] -= 1
 			self.update_evoT1(index+1, map_position1, vertex_type1, -1)
+			start_trans = evo_dictionary_4vert[vertex_type1]
 			
 			vertex_mask1[pos_mask1] = abs(vertex_mask1[pos_mask1] - 1)
 			vertex_type1 = self.extract_code(vertex_mask1)
 			self.evolution[index+1, vertex_type1] += 1
 			self.update_evoT1(index+1, map_position1, vertex_type1, 1)
 			self.map[map_position1[0], map_position1[1]] = vertex_type1
+			self.trans_single[index, :] = np.array([start_trans, evo_dictionary_4vert[vertex_type1]], dtype=np.int_)
 	
 	#Filling the attributes for each element
 	def generate_array(self):
@@ -519,6 +527,11 @@ def save_evolution(f, obj):
 	dset_singleFreq.attrs['input_single'] = obj.input_single
 	dset_singleFreq.attrs['attempt_freq'] = obj.input_attemptFreq[1]
 	
+	dset_doubleTrans_name = 'run{:d}/trans_double'.format(obj.input_run)
+	dset_doubleTrans = f.create_dataset(dset_doubleTrans_name, data=obj.trans_double)
+	dset_singleTrans_name = 'run{:d}/trans_single'.format(obj.input_run)
+	dset_singleTrans = f.create_dataset(dset_singleTrans_name, data=obj.trans_single)
+	
 	for i in range(obj.input_images):
 		dset_image_name = 'run{:d}/images/img{:d}'.format(obj.input_run, i)
 		dset_img = f.create_dataset(dset_image_name, data=obj.img_archive[:, :, i])
@@ -596,14 +609,22 @@ def merge_runs(f):
 	evolutionT1_merged = np.zeros((kmcSteps_tot+1, 2), dtype=np.float_)
 	t_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
 	m_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
+	doubleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
+	singleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
+	
 	evolution_run = f['run0/evo'].value
 	evolutionT1_run = f['run0/evo_T1'].value
 	t_run = f['run0/t'].value
 	m_run = f['run0/m'].value
+	doubleTrans_run = f['run0/trans_double'].value
+	singleTrans_run = f['run0/trans_single'].value
 	evolution_merged[0:kmcSteps[0]+1, :] = evolution_run
 	evolutionT1_merged[0:kmcSteps[0]+1, :] = evolutionT1_run
 	t_merged[0:kmcSteps[0]+1] = t_run
 	m_merged[0:kmcSteps[0]+1] = m_run
+	doubleTrans_merged[0:kmcSteps[0]] = doubleTrans_run
+	singleTrans_merged[0:kmcSteps[0]] = singleTrans_run
+	
 	start_index = kmcSteps[0] + 1
 	for run in range(num_runs-1):
 		stop_index = start_index + kmcSteps[run+1]
@@ -611,10 +632,14 @@ def merge_runs(f):
 		evolutionT1_run = f['run{:d}/evo_T1'.format(run+1)].value
 		t_run = f['run{:d}/t'.format(run+1)].value
 		m_run = f['run{:d}/m'.format(run+1)].value
+		doubleTrans_run = f['run{:d}/trans_double'.format(run+1)].value
+		singleTrans_run = f['run{:d}/trans_single'.format(run+1)].value
 		evolution_merged[start_index:stop_index, :] = evolution_run[1:, :]
 		evolutionT1_merged[start_index:stop_index, :] = evolutionT1_run[1:, :]
 		t_merged[start_index:stop_index] = t_run[1:]
 		m_merged[start_index:stop_index] = m_run[1:]
+		doubleTrans_merged[start_index-1:stop_index-1] = doubleTrans_run
+		singleTrans_merged[start_index-1:stop_index-1] = singleTrans_run
 		start_index = stop_index
 		
 	#Save the merged run in the same HDF5 file
@@ -630,12 +655,89 @@ def merge_runs(f):
 	dset_t_merged = f.create_dataset('merged/t', data=t_merged)
 	dset_m_merged = f.create_dataset('merged/m', data=m_merged)
 	dset_evoT1_merged = f.create_dataset('merged/evo_T1', data=evolutionT1_merged)
+	dset_doubleTrans_merged = f.create_dataset('merged/trans_double', data=doubleTrans_merged)
+	dset_singleTrans_merged = f.create_dataset('merged/trans_single', data=singleTrans_merged)
 	print('MERGED group created ({:d} runs)'.format(num_runs))
 
 #-------------------- DRAWING Functions --------------------
 
-#Draw a map with the transition distribution (given the run)
+#Draw a map with the simulated transition distribution (given the run)
 def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	if run == -2:
+		dset_doubleTrans_name = 'merged/trans_double'
+		dset_singleTrans_name = 'merged/trans_single'
+		dset_t_name = 'merged/t'
+	else:
+		run = np.abs(run)
+		dset_doubleTrans_name = 'run{:d}/trans_double'.format(run)
+		dset_singleTrans_name = 'run{:d}/trans_single'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+	t = f[dset_t_name].value
+	list_doubleTrans = f[dset_doubleTrans_name].value
+	list_singleTrans = f[dset_singleTrans_name].value
+	if file_flag:
+		f.close()
+	
+	if time_range[0] > time_range[-1]:
+		ldt_to_consider = list_doubleTrans
+		lst_to_consider = list_singleTrans
+	else:
+		bool_range = np.logical_and(t >= time_range[0], t < time_range[1])
+		ldt_to_consider = list_doubleTrans[bool_range, :]
+		lst_to_consider = list_singleTrans[bool_range, :]
+	
+	flag_double = ldt_to_consider[:, 0] != -1
+	flag_single = lst_to_consider[:, 0] != -1
+	n_trans_double = np.sum(flag_double)
+	n_trans_single = np.sum(flag_single)
+	n_trans = n_trans_double + n_trans_single
+	
+	transitions_double = np.zeros((11, 11), dtype=np.float_) #11 for properly drawing...
+	transitions_single = np.zeros((5, 5), dtype=np.float_) #5 for properly drawing...
+	for i in np.arange(n_trans):
+		if flag_double[i]:
+			transitions_double[ldt_to_consider[i, 1], ldt_to_consider[i, 0]] += 1
+		elif flag_single[i]:
+			transitions_single[lst_to_consider[i, 1], lst_to_consider[i, 0]] += 1
+		else:
+			raise RuntimeError('This error should NOT happen')
+	transitions_double = np.ma.masked_array(transitions_double, transitions_double == 0)
+	transitions_single = np.ma.masked_array(transitions_single, transitions_single == 0)
+	transitions_double /= n_trans
+	transitions_single /= n_trans
+	
+	print('Percentage of DOUBLE transitions: {:.3f} %'.format(100*n_trans_double/n_trans))
+	print('Percentage of SINGLE transitions: {:.3f} %'.format(100*n_trans_single/n_trans))
+	
+	fig = plt.figure(figsize=(20,8))
+	ax1 = fig.add_subplot(1,2,1)
+	cmesh = ax1.pcolormesh(np.arange(11)-0.5, np.arange(11)-0.5, transitions_double, edgecolor='k', cmap=plt.get_cmap(cmap_name))
+	plt.colorbar(cmesh)
+	plt.xticks(np.arange(10), string_trans_double)
+	plt.yticks(np.arange(10), string_trans_double)
+	ax1.set_title('Run {:d} - Considered trans. = {:d}/{:d}'.format(run, n_trans_double, n_trans))
+	ax1.axis('scaled')
+	ax1.set_xlabel('FROM')
+	ax1.set_ylabel('TO')
+	ax2 = fig.add_subplot(1,2,2)
+	cmesh = ax2.pcolormesh(np.arange(5)-0.5, np.arange(5)-0.5, transitions_single, edgecolor='k', cmap=plt.get_cmap(cmap_name))
+	plt.colorbar(cmesh)
+	plt.xticks(np.arange(4), ('1', '2', '3', '4'))
+	plt.yticks(np.arange(4), ('1', '2', '3', '4'))
+	ax2.set_title('Run {:d} - Considered trans. = {:d}/{:d}'.format(run, n_trans_single, n_trans))
+	ax2.axis('scaled')
+	ax2.set_xlabel('FROM')
+	ax2.set_ylabel('TO')
+	plt.show()
+	
+	return transitions_double, transitions_single
+
+#Draw a map with the calculated transition distribution (given the run)
+def draw_trans_calc(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=True):
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -643,7 +745,6 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 	if run == -2:
 		dset_evo_name = 'merged/evo'
 		dset_t_name = 'merged/t'
-		multipleRuns = f[dset_evo_name].attrs['merged_runs']
 	else:
 		run = np.abs(run)
 		dset_evo_name = 'run{:d}/evo'.format(run)
@@ -701,6 +802,7 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 			else:
 				transitions_single[pos_indices[0], neg_indices[0]] += 1
 		else:
+			print('NO transitions: {:d}'.format(n_trans-n_trans_single-n_trans_double))
 			raise RuntimeError('Case not considered - TO BE CHECKED')
 	transitions_double = np.ma.masked_array(transitions_double, transitions_double == 0)
 	transitions_single = np.ma.masked_array(transitions_single, transitions_single == 0)
