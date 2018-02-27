@@ -41,8 +41,8 @@ evo_dictionary_4vert = np.array([3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3])
 # 8 - 34
 # 9 - 44
 #-------------
-string_trans = ('11','12','13','14','22','23','24','33','34','44')
-list_trans = np.array([
+string_trans_double = ('11','12','13','14','22','23','24','33','34','44')
+list_trans_double = np.array([
 	[0, 1, 2, 3],
 	[1, 4, 5, 6],
 	[2, 5, 7, 8],
@@ -634,8 +634,8 @@ def merge_runs(f):
 
 #-------------------- DRAWING Functions --------------------
 
-#Draw a map with the "bulk" transition distribution (given the run)
-def draw_trans(input_name, run, time_range=(0, -1), cmap_name='bwr', file_flag=True):
+#Draw a map with the transition distribution (given the run)
+def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=True):
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -664,37 +664,75 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='bwr', file_flag=T
 		n_trans = np.sum(bool_range) - 1
 	
 	evo_diff = (rows*cols*np.diff(evo_to_consider, axis=0)).astype(np.int_)
-	flag_4 = np.sum(np.abs(evo_diff), axis=1)
-	n_trans_double = np.sum(flag_4 == 4)
-	print('Percentage of bulk transitions: {:.3f} %'.format(100*n_trans_double/n_trans))
+	flag = np.sum(np.abs(evo_diff), axis=1)
+	n_trans_double = np.sum(flag == 4)
+	n_trans_single = np.sum(flag == 2)
 	
-	transitions = np.zeros((11, 11), dtype=np.float_) #for properly drawing...
+	transitions_double = np.zeros((11, 11), dtype=np.float_) #11 for properly drawing...
+	transitions_single = np.zeros((5, 5), dtype=np.float_) #5 for properly drawing...
 	for i in np.arange(n_trans):
-		if flag_4[i] == 4:
+		if flag[i] == 4:
 			pos_indices = evo_dictionary_4vert[evo_diff[i, :] > 0]
 			if np.size(pos_indices) == 2:
-				end_index = list_trans[pos_indices[0], pos_indices[1]]
+				end_index = list_trans_double[pos_indices[0], pos_indices[1]]
 			else:
-				end_index = list_trans[pos_indices[0], pos_indices[0]]
+				end_index = list_trans_double[pos_indices[0], pos_indices[0]]
 			neg_indices = evo_dictionary_4vert[evo_diff[i, :] < 0]
 			if np.size(neg_indices) == 2:
-				start_index = list_trans[neg_indices[0], neg_indices[1]]
+				start_index = list_trans_double[neg_indices[0], neg_indices[1]]
 			else:
-				start_index = list_trans[neg_indices[0], neg_indices[0]]
-			transitions[end_index, start_index] += 1
-	transitions /= n_trans_double
+				start_index = list_trans_double[neg_indices[0], neg_indices[0]]
+			transitions_double[end_index, start_index] += 1
+		elif flag[i] == 2:
+			pos_indices = evo_dictionary_4vert[evo_diff[i, :] > 0]
+			neg_indices = evo_dictionary_4vert[evo_diff[i, :] < 0]
+			if pos_indices[0] == neg_indices[0]:
+				if pos_indices[0] == 1:
+					transitions_double[list_trans_double[1, 2], list_trans_double[1, 2]] += 1
+					n_trans_single -= 1
+					n_trans_double += 1
+				elif pos_indices[0] == 2:
+					transitions_double[list_trans_double[0, 2], list_trans_double[0, 2]] += 1
+					n_trans_single -= 1
+					n_trans_double += 1
+				else:
+					print(pos_indices[0])
+					raise RuntimeError('Case not considered - TO BE CHECKED')
+			else:
+				transitions_single[pos_indices[0], neg_indices[0]] += 1
+		else:
+			raise RuntimeError('Case not considered - TO BE CHECKED')
+	transitions_double = np.ma.masked_array(transitions_double, transitions_double == 0)
+	transitions_single = np.ma.masked_array(transitions_single, transitions_single == 0)
+	transitions_double /= n_trans
+	transitions_single /= n_trans
 	
-	fig = plt.figure(figsize=(10,8))
-	ax = fig.add_subplot(1,1,1)
-	cmesh = ax.pcolormesh(np.arange(11)-0.5, np.arange(11)-0.5, transitions, edgecolor='k', cmap=plt.get_cmap(cmap_name))
+	print('Percentage of DOUBLE transitions: {:.3f} %'.format(100*n_trans_double/n_trans))
+	print('Percentage of SINGLE transitions: {:.3f} %'.format(100*n_trans_single/n_trans))
+	print('NO transitions: {:d}'.format(n_trans-n_trans_single-n_trans_double))
+	
+	fig = plt.figure(figsize=(20,8))
+	ax1 = fig.add_subplot(1,2,1)
+	cmesh = ax1.pcolormesh(np.arange(11)-0.5, np.arange(11)-0.5, transitions_double, edgecolor='k', cmap=plt.get_cmap(cmap_name))
 	plt.colorbar(cmesh)
-	plt.xticks(np.arange(10), string_trans)
-	plt.yticks(np.arange(10), string_trans)
-	plt.title('{:d} x {:d} Vertices - Run {:d} - Considered trans. = {:d}/{:d}'.format(rows, cols, run, n_trans_double, n_trans))
-	ax.axis('scaled')
-	plt.xlabel('FROM')
-	plt.ylabel('TO')
+	plt.xticks(np.arange(10), string_trans_double)
+	plt.yticks(np.arange(10), string_trans_double)
+	ax1.set_title('{:d} x {:d} Vertices - Run {:d} - Considered trans. = {:d}/{:d}'.format(rows, cols, run, n_trans_double, n_trans))
+	ax1.axis('scaled')
+	ax1.set_xlabel('FROM')
+	ax1.set_ylabel('TO')
+	ax2 = fig.add_subplot(1,2,2)
+	cmesh = ax2.pcolormesh(np.arange(5)-0.5, np.arange(5)-0.5, transitions_single, edgecolor='k', cmap=plt.get_cmap(cmap_name))
+	plt.colorbar(cmesh)
+	plt.xticks(np.arange(4), ('1', '2', '3', '4'))
+	plt.yticks(np.arange(4), ('1', '2', '3', '4'))
+	ax2.set_title('{:d} x {:d} Vertices - Run {:d} - Considered trans. = {:d}/{:d}'.format(rows, cols, run, n_trans_single, n_trans))
+	ax2.axis('scaled')
+	ax2.set_xlabel('FROM')
+	ax2.set_ylabel('TO')
 	plt.show()
+	
+	return transitions_double, transitions_single
 
 #Draw colored map (given the run and the image num.)
 def draw_map(input_name, run, image, type='v', file_flag=True):
