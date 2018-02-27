@@ -11,6 +11,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import ticker
+from matplotlib.patches import Rectangle
 from scipy.optimize import curve_fit
 from scipy.integrate import odeint
 import h5py
@@ -28,7 +29,6 @@ myC = '#00f7f7'
 myO = '#ffa500'
 myGG = '#b0b0b0'
 
-evo_dictionary_4vert = np.array([3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3])
 #- DICTIONARY -
 # 0 - 11
 # 1 - 12
@@ -41,6 +41,7 @@ evo_dictionary_4vert = np.array([3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3])
 # 8 - 34
 # 9 - 44
 #-------------
+evo_dictionary_4vert = np.array([3,2,2,1,2,0,1,2,2,1,0,2,1,2,2,3])
 string_trans_double = ('11','12','13','14','22','23','24','33','34','44')
 list_trans_double = np.array([
 	[0, 1, 2, 3],
@@ -713,10 +714,29 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 	print('Percentage of DOUBLE transitions: {:.3f} %'.format(100*n_trans_double/n_trans))
 	print('Percentage of SINGLE transitions: {:.3f} %'.format(100*n_trans_single/n_trans))
 	
+	#- DICTIONARY -
+	# 0 - 11
+	# 1 - 12
+	# 2 - 13
+	# 3 - 14
+	# 4 - 22
+	# 5 - 23
+	# 6 - 24
+	# 7 - 33
+	# 8 - 34
+	# 9 - 44
+	#-------------
+	atd = ((2,2), (5,5), (8,8), (2,5), (5,8), (2,8), (7,0), (7,1), (7,3), (7,4), (7,6), (7,9))
+	ats = ((0,2), (1,2), (3,2))
+	
 	fig = plt.figure(figsize=(20,8))
 	ax1 = fig.add_subplot(1,2,1)
 	cmesh = ax1.pcolormesh(np.arange(11)-0.5, np.arange(11)-0.5, transitions_double, edgecolor='k', cmap=plt.get_cmap(cmap_name))
 	plt.colorbar(cmesh)
+	for i in range(len(atd)):
+		for j in range(2):
+			r = Rectangle((atd[i][j]-0.5, atd[i][1-j]-0.5), 1, 1, fill=False, edgecolor='m', linewidth=4)
+			ax1.add_patch(r)
 	plt.xticks(np.arange(10), string_trans_double)
 	plt.yticks(np.arange(10), string_trans_double)
 	ax1.set_title('Run {:d} - Considered trans. = {:d}/{:d}'.format(run, n_trans_double, n_trans))
@@ -726,6 +746,10 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 	ax2 = fig.add_subplot(1,2,2)
 	cmesh = ax2.pcolormesh(np.arange(5)-0.5, np.arange(5)-0.5, transitions_single, edgecolor='k', cmap=plt.get_cmap(cmap_name))
 	plt.colorbar(cmesh)
+	for i in range(len(ats)):
+		for j in range(2):
+			r = Rectangle((ats[i][j]-0.5, ats[i][1-j]-0.5), 1, 1, fill=False, edgecolor='m', linewidth=4)
+			ax2.add_patch(r)
 	plt.xticks(np.arange(4), ('1', '2', '3', '4'))
 	plt.yticks(np.arange(4), ('1', '2', '3', '4'))
 	ax2.set_title('Run {:d} - Considered trans. = {:d}/{:d}'.format(run, n_trans_single, n_trans))
