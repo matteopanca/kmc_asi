@@ -677,7 +677,7 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 		dset_doubleTrans_name = 'run{:d}/trans_double'.format(run)
 		dset_singleTrans_name = 'run{:d}/trans_single'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	t = f[dset_t_name].value
+	t = f[dset_t_name].value[1:]
 	list_doubleTrans = f[dset_doubleTrans_name].value
 	list_singleTrans = f[dset_singleTrans_name].value
 	if file_flag:
