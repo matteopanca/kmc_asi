@@ -471,6 +471,8 @@ class Array:
 			self.m[i+1] = self.m[i] - (2*self.list[island_to_flip].dir - 1)
 			self.list[island_to_flip].dir = abs(self.list[island_to_flip].dir - 1) #flip the island
 			self.m[i+1] += 2*self.list[island_to_flip].dir - 1
+			#Update t - TO BE DONE BEFORE UPDATING list_partialSum
+			self.t[i+1] = self.t[i] - np.log(rand_time[i])/self.list_partialSum[-1]
 			#Update list_freq
 			self.list_freq[island_to_flip] = self.get_freq(island_to_flip)
 			for j in range(self.list[island_to_flip].neigh_num):
@@ -479,8 +481,6 @@ class Array:
 			self.list_partialSum[0] = self.list_freq[0]
 			for j in range(self.totEl-1):
 				self.list_partialSum[j+1] = self.list_partialSum[j] + self.list_freq[j+1]
-			#Update t
-			self.t[i+1] = self.t[i] - np.log(rand_time[i])/self.list_partialSum[-1]
 			#Save image (with logarithmic sampling)
 			if np.sum(self.index_saveImg == i) >= 1:
 				img_counter += 1
@@ -659,6 +659,36 @@ def merge_runs(f):
 	dset_doubleTrans_merged = f.create_dataset('merged/trans_double', data=doubleTrans_merged)
 	dset_singleTrans_merged = f.create_dataset('merged/trans_single', data=singleTrans_merged)
 	print('MERGED group created ({:d} runs)'.format(num_runs))
+
+#4-vertex equilibrium state (time-weighted states) - It considers only t >= start_time
+def calc_eq(input_name, start_time, file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	
+	num_runs = len(f.keys()) - 1
+	eq_pop = np.zeros(16, dtype=np.float_)
+	for run in range(num_runs):
+		evo_run = f['run{:d}/evo'.format(run)].value
+		t_run = f['run{:d}/t'.format(run)].value
+		bool_range = t_run >= start_time
+		t_deltas = np.diff(t_run[bool_range])
+		t_sum = np.sum(t_deltas)
+		bool_range[-1] = False
+		evo_extracted = evo_run[bool_range, :]
+		for i in range(16):
+			eq_pop[i] += np.sum(evo_extracted[:, i]*t_deltas)/t_sum
+	eq_pop /= num_runs
+	
+	if file_flag:
+		f.close()
+	
+	eq_pop_4vertices = np.zeros(4, dtype=np.float_)
+	for i in range(16):
+		eq_pop_4vertices[evo_dictionary_4vert[i]] += eq_pop[i]
+	
+	return eq_pop_4vertices
 
 #-------------------- DRAWING Functions --------------------
 
