@@ -981,8 +981,85 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 	ax.legend(loc='best')
 	plt.show()
 
-#Plot the 4 vertices MASTER EQUATION evolution given the run and optionally the axis (Simple DVA M. Eq.)
-def plot_meq(input_name, run, ax='', noT1=(False, ''), file_flag=True):
+#Plot the (4 vertices) SVA MASTER EQUATION evolution given the run and (optionally) the axis
+def plot_meq_sva(input_name, run, ax='', file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	if run == -1:
+		dset_evo_name = 'avg/evo'
+		dset_singleFreq_name = 'avg/f_single'
+		dset_t_name = 'avg/t'
+	else:
+		dset_evo_name = 'run{:d}/evo'.format(run)
+		dset_singleFreq_name = 'run{:d}/f_single'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+	evo = f[dset_evo_name].value
+	singleFreq = f[dset_singleFreq_name].value
+	t = f[dset_t_name].value
+	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
+	if file_flag:
+		f.close()
+	
+	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float_)
+	for i in range(16):
+		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
+	y0_4 = evo_4vertices[0, :] #starting state (4 vertices)
+	
+	#Build the frequencies
+	freq_table = np.zeros((4, 4), dtype=np.float_)
+	freq_table[0, 2] = singleFreq[2, 1]
+	freq_table[2, 0] = 4*singleFreq[2, 0]
+	freq_table[1, 2] = 2*singleFreq[1, 1]
+	freq_table[2, 1] = 4*singleFreq[1, 0]
+	freq_table[3, 2] = singleFreq[0, 0]
+	freq_table[2, 3] = 4*singleFreq[0, 1]
+	
+	#Derivative function
+	def meq_func(y, t, f):
+		dy = np.zeros(4, dtype=np.float_)
+		dy[0] = f[0, 2]*y[2] - f[2, 0]*y[0]
+		dy[1] = f[1, 2]*y[2] - f[2, 1]*y[1]
+		dy[2] = f[2, 0]*y[0] + f[2, 1]*y[1] + f[2, 3]*y[3] - (f[0, 2]+f[1, 2]+f[3, 2])*y[2]
+		dy[3] = f[3, 2]*y[2] - f[2, 3]*y[3]
+		return dy
+	
+	#Solve the Diff. Eq. System
+	y_sol = odeint(meq_func, y0_4, t, args=(freq_table,))
+	
+	color_dictionary_4vert = [myO, myM, myC, myK]
+	if ax == '':
+		fig = plt.figure(figsize=(12,12))
+		ax = fig.add_subplot(1,1,1)
+	for i in range(4):
+		#initial value skipped because of LOG plot (t=0 is not drawable)
+		ax.semilogx(t[1:], y_sol[1:, i], '--', color=color_dictionary_4vert[i], linewidth=2, label='T{:d} - SVA M. Eq.'.format(i+1))
+	plt.xlabel('t (s)')
+	plt.ylabel('P(t)')
+	ax.set_ylim([0, 1])
+	ax.grid(True)
+	ax.legend(loc='best')
+	
+	evo_diff_meq = evo_4vertices - y_sol
+	fig_diff = plt.figure(figsize=(12,12))
+	ax_diff = fig_diff.add_subplot(1,1,1)
+	for i in range(4):
+		#initial value skipped because of LOG plot (t=0 is not drawable)
+		ax_diff.semilogx(t[1:], evo_diff_meq[1:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d} - Diff.'.format(i+1))
+	ax_diff.axhline(0, color='k')
+	plt.title('Evolution vs SVA M. Eq. for ' + ax.get_title())
+	plt.xlabel('t (s)')
+	plt.ylabel('P$_{Evo}$(t) - P$_{SVA-MEq}$(t)')
+	#ax_diff.set_ylim([0, 1])
+	ax_diff.grid(True)
+	ax_diff.legend(loc='best')
+	
+	plt.show()
+	return y0_4
+
+#Plot the 4 vertices MASTER EQUATION evolution given the run and (optionally) the axis (Simple DVA M. Eq.)
+def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
