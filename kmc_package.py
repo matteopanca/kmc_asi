@@ -215,7 +215,13 @@ class Array:
 		else:
 			freq_out = 0
 			print('---> ERROR in initializing list_freq') #DEBUG control
-		return np.power(freq_out, 1 + self.list[index].disorder) #Introducing disorder
+		if self.input_disorderStDev == 0:
+			return freq_out
+		else:
+			if neigh_num == 6:
+				return self.input_attemptFreq[0]*np.power(freq_out/self.input_attemptFreq[0], 1 + self.list[index].disorder) #Introducing disorder
+			else:
+				return self.input_attemptFreq[1]*np.power(freq_out/self.input_attemptFreq[1], 1 + self.list[index].disorder) #Introducing disorder
 	
 	def get_event_index(self, prob):
 		boundary = prob*self.list_partialSum[-1] #It should never be self.list_partialSum[-1]
