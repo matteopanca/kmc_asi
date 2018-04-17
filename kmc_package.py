@@ -873,8 +873,10 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	else:
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	evo = f[dset_evo_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
-	t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#evo = f[dset_evo_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	evo = f[dset_evo_name].value
+	t = f[dset_t_name].value
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -887,14 +889,14 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	
 	color_dictionary_4vert = [myG, myB, myR, myY]
 	#color_dictionary_4vert = [myK, myR, myB, myY] #PRL 111 057204 (2013)
-	evo_4vertices = np.zeros((kmcSteps, 4), dtype=np.float_)
+	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float_)
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
 	
 	fig = plt.figure(figsize=(12,12))
 	ax = fig.add_subplot(1,1,1)
 	for i in range(4):
-		ax.semilogx(t, evo_4vertices[:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1))
+		ax.semilogx(t[1:], evo_4vertices[1:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1)) #initial value skipped because of LOG plot (t=0 is not drawable)
 		#ax.plot(t, evo_4vertices[:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1))
 	if run == -1 or run == -2:
 		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
@@ -913,7 +915,7 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	if save_evo:
 		ext_position = 1 + input_name[::-1].find('.')
 		out_name = input_name[:-ext_position] + '_Evo_run{:d}.txt'.format(run)
-		data_to_save = np.zeros((kmcSteps, 5), dtype=np.float_)
+		data_to_save = np.zeros((kmcSteps+1, 5), dtype=np.float_)
 		data_to_save[:, 0] = t
 		for i in range(4):
 			data_to_save[:, i+1] = evo_4vertices[:, i]
@@ -942,9 +944,12 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_evoT1_name = 'run{:d}/evo_T1'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	evo = f[dset_evo_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
-	evo_T1 = f[dset_evoT1_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
-	t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#evo = f[dset_evo_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#evo_T1 = f[dset_evoT1_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	evo = f[dset_evo_name].value
+	evo_T1 = f[dset_evoT1_name].value
+	t = f[dset_t_name].value
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -956,7 +961,7 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 		f.close()
 	
 	color_dictionary_T1 = [myG, myM, myK]
-	evo_CompleteT1 = np.zeros((kmcSteps, 3), dtype=np.float_)
+	evo_CompleteT1 = np.zeros((kmcSteps+1, 3), dtype=np.float_)
 	evo_CompleteT1[:, 0:2] = evo_T1
 	for i in range(16):
 		if (i != 5) and (i != 10):
@@ -965,8 +970,8 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 	fig = plt.figure(figsize=(12,12))
 	ax = fig.add_subplot(1,1,1)
 	for i in range(2):
-		ax.semilogx(t, evo_CompleteT1[:,i], '-', color=color_dictionary_T1[i], linewidth=2, label='T1 Phase {:d}'.format(i))
-	ax.semilogx(t, evo_CompleteT1[:,2], '-', color=color_dictionary_T1[2], linewidth=2, label='Boundary')
+		ax.semilogx(t[1:], evo_CompleteT1[1:,i], '-', color=color_dictionary_T1[i], linewidth=2, label='T1 Phase {:d}'.format(i)) #initial value skipped because of LOG plot (t=0 is not drawable)
+	ax.semilogx(t[1:], evo_CompleteT1[1:,2], '-', color=color_dictionary_T1[2], linewidth=2, label='Boundary') #initial value skipped because of LOG plot (t=0 is not drawable)
 	if run == -1 or run == -2:
 		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
 	else:
@@ -1206,8 +1211,10 @@ def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_m_name = 'run{:d}/m'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	m = f[dset_m_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#m = f[dset_m_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	m = f[dset_m_name].value
+	t = f[dset_t_name].value
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -1220,7 +1227,7 @@ def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 	
 	fig = plt.figure(figsize=(12,12))
 	ax = fig.add_subplot(1,1,1)
-	ax.semilogx(t, m, '-', color=myB, linewidth=2, label='Simulated M')
+	ax.semilogx(t[1:], m[1:], '-', color=myB, linewidth=2, label='Simulated M') #initial value skipped because of LOG plot (t=0 is not drawable)
 	if run == -1 or run == -2:
 		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
 	else:
@@ -1240,7 +1247,7 @@ def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 		ext_position = 1 + input_name[::-1].find('.')
 		out_name = input_name[:-ext_position] + '_M_run{:d}.txt'.format(run)
 		
-		data_to_save = np.zeros((kmcSteps, 2), dtype=np.float_)
+		data_to_save = np.zeros((kmcSteps+1, 2), dtype=np.float_)
 		data_to_save[:, 0] = t
 		data_to_save[:, 1] = m
 		np.savetxt(out_name, data_to_save, fmt='%.8e', delimiter='\t')
