@@ -1197,6 +1197,44 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	plt.show()
 	return y0_4
 
+#Plot all the m evolutions in the file
+def plot_m_all(input_name, file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	
+	num_runs = len(f.keys())
+	if 'avg' in f.keys():
+		num_runs -= 1
+	if 'merged' in f.keys():
+		num_runs -= 1
+	
+	fig = plt.figure(figsize=(12,12))
+	ax = fig.add_subplot(1,1,1)
+	list_max = []
+	list_min = []
+	my_color = plt.get_cmap('jet', num_runs)
+	for run in range(num_runs):
+		dset_m_name = 'run{:d}/m'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+		m = f[dset_m_name].value
+		t = f[dset_t_name].value
+		ax.semilogx(t[1:], m[1:], '-', color=my_color(run), linewidth=2, label='Run {:d}'.format(run)) #initial value skipped because of LOG plot (t=0 is not drawable)
+		list_max.append(m.max())
+		list_min.append(m.min())
+	plt.title('All the {:d} runs in the simulation'.format(num_runs))
+	plt.xlabel('t (s)')
+	plt.ylabel('M along main diagonal (a.u.)')
+	ax.set_ylim([np.min(list_min)-0.05, np.max(list_max)+0.05])
+	ax.axhline(0, color='k')
+	ax.grid(True)
+	ax.legend(loc='best')
+	plt.show()
+	
+	if file_flag:
+		f.close()
+
 #Plot the m evolution (given the run)
 def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 	if file_flag:
