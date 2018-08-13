@@ -606,6 +606,9 @@ def avg_runs(f):
 
 #Merge ALL the runs in a given HDF5 file
 def merge_runs(f):
+	if 'merged' in f.keys():
+		del f['merged']
+		print('MERGED group deleted')
 	num_runs = len(f.keys())
 	kmcSteps = np.zeros(num_runs, dtype=np.float_)
 	for run in range(num_runs):
