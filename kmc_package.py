@@ -1,4 +1,4 @@
-#---------- List of CHANGES ----------
+#---------- List of IMPORTANT CHANGES ----------
 #From 06/04/2017 on --->
 #H5PY removed from the Array Class
 #"Energy coefficient" inserted after Jonathan's analysis
@@ -6,7 +6,7 @@
 #Magnetization evolution along the diagonal
 #From 22/02/2018 on --->
 #Removed "Energy coefficient", since we need a more complex analysis
-#-------------------------------------
+#-----------------------------------------------
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1362,7 +1362,59 @@ def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
 	return popt, perr
 
 #Histogram of dt (and hopefully fit)
-def time_stats(input_name, run, num_bins=100, file_flag=True):
+def time_hist(input_name, run, limits=(0, -1), num_bins=100, fit=False, file_flag=True):
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	if run == -1:
+		dset_evo_name = 'avg/evo'
+		dset_t_name = 'avg/t'
+	elif run == -2:
+		dset_evo_name = 'merged/evo'
+		dset_t_name = 'merged/t'
+	else:
+		dset_evo_name = 'run{:d}/evo'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+	timeLimit = f[dset_evo_name].attrs['timeLimit']
+	t = f[dset_t_name].value #The whole time trace
+	if file_flag:
+		f.close()
+	
+	if limits[1] > limits[0]:
+		low_limit = t >= limits[0]
+		high_limit = t <= limits[1]
+		t = t[low_limit & high_limit]
+	
+	t_diff = t[1:] - t[:-1]
+	num_data = len(t_diff)
+	
+	fig = plt.figure(figsize=(12,12))
+	ax = fig.add_subplot(1,1,1)
+	n, bins, patches = ax.hist(t_diff, num_bins, facecolor='green', alpha=0.5, label='Hist.')
+	ax.xaxis.get_major_formatter().set_powerlimits([-2, 2])
+	plt.title('Time Satistics - Run {:d} - Events: {:d} - Total Time: {:.4e} s'.format(run, num_data, timeLimit))
+	plt.xlabel('$\Delta$t (s)')
+	plt.ylabel('Events')
+	ax.grid(True)
+	
+	if fit:
+		def exp_func(x, a, b, c, d):
+			return (a*np.exp(-x/b) + c*np.exp(-x/d))
+		center_bins = (bins[1:] + bins[:-1])/2
+		popt, pcov = curve_fit(exp_func, center_bins, n, p0=(num_data/2, np.max(bins)/5, num_data/2, np.max(bins)/5))
+		fitted_n = exp_func(center_bins, *popt)
+		print('Mult. factor 1 = {:.4e}'.format(popt[0]))
+		print('Time Const. 1 (s) = {:.4e}'.format(popt[1]))
+		print('Mult. factor 2 = {:.4e}'.format(popt[2]))
+		print('Time Const. 2 (s) = {:.4e}'.format(popt[3]))
+		ax.plot(center_bins, fitted_n, '-b', linewidth=2, label='Double Exp. Fit')
+		ax.legend(loc='best')
+	
+	plt.show()
+
+#Dt step evolution
+def time_evoDt(input_name, run, file_flag=True):
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1386,24 +1438,11 @@ def time_stats(input_name, run, num_bins=100, file_flag=True):
 	
 	fig = plt.figure(figsize=(12,12))
 	ax = fig.add_subplot(1,1,1)
-	n, bins, patches = ax.hist(t_diff, num_bins, facecolor='green', alpha=0.5, label='Hist.')
+	ax.plot(np.arange(num_data), t_diff, '-b', linewidth=1)
 	plt.title('Time Satistics - Run {:d} - Events: {:d} - Total Time: {:.4e} s'.format(run, num_data, timeLimit))
-	plt.xlabel('$\Delta$t (s)')
-	plt.ylabel('Events')
+	plt.xlabel('Step')
+	plt.ylabel('$\Delta$t (s)')
 	ax.grid(True)
-	
-	def exp_func(x, a, b, c, d):
-		return (a*np.exp(-x/b) + c*np.exp(-x/d))
-	center_bins = (bins[1:] + bins[:-1])/2
-	popt, pcov = curve_fit(exp_func, center_bins, n, p0=(num_data/2, np.max(bins)/5, num_data/2, np.max(bins)/5))
-	fitted_n = exp_func(center_bins, *popt)
-	print('Mult. factor 1 = {:.4e}'.format(popt[0]))
-	print('Time Const. 1 (s) = {:.4e}'.format(popt[1]))
-	print('Mult. factor 2 = {:.4e}'.format(popt[2]))
-	print('Time Const. 2 (s) = {:.4e}'.format(popt[3]))
-	
-	ax.plot(center_bins, fitted_n, '-b', linewidth=2, label='Double Exp. Fit')	
-	ax.legend(loc='best')
 	plt.show()
 
 #Plot of the 'timeLimit' attributes
