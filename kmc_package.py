@@ -15,6 +15,8 @@ from matplotlib.patches import Rectangle
 from scipy.optimize import curve_fit
 from scipy.integrate import odeint
 import h5py
+import tkinter as tk
+from tkinter import filedialog
 
 out_path1 = 'D:\Documents\KMC\ASI'
 out_path2 = 'E:\Matteo\Python\KMC\Data\output'
@@ -856,13 +858,14 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 			counter += 1
 	
 	size_points = 20e4*(1/max(rows, cols))**2
-	fig = plt.figure(figsize=(12,12))
+	fig = plt.figure(figsize=(10,10))
 	ax = fig.add_subplot(1,1,1)
 	ax.scatter(x_coord, y_coord, size_points, color, edgecolors=color)
 	plt.title('{:d} x {:d} Vertices - Run {:d}, Image {:d}, Step {:.1f} - t = {:.4e} s'.format(rows, cols, run, image, step, t))
 	ax.axis('scaled')
 	ax.set_xlim([-1, cols])
 	ax.set_ylim([-1, rows])
+	plt.tight_layout()
 	plt.show()
 
 #Plot the 4 vertices evolution (given the run)
@@ -1493,3 +1496,9 @@ def time_limit(input_name, file_flag=True):
 	ax2.grid(True)
 	plt.tight_layout()
 	plt.show()
+
+#Get the selected file's path in a string
+def get_path(start_path='', filter=(('HDF5 files', '*.hdf5'),('All files', '*'))):
+	root = tk.Tk() #hide the root window
+	root.withdraw() #hide the root window
+	return filedialog.askopenfilename(initialdir=start_path, title='Select input file', filetypes=filter)
