@@ -1,2 +1,5 @@
-__pycache__/
+kmcasi/__pycache__/
 Archive_Scripts/
+MANIFEST
+dist/
+build/

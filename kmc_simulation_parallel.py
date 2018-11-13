@@ -1,5 +1,5 @@
 import numpy as np
-import kmc_package as kmc
+import kmcasi as kmc
 from multiprocessing import Pool
 import h5py
 import sys

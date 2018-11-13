@@ -1,4 +1,4 @@
-import kmc_package as kmc
+import kmcasi as kmc
 import numpy as np
 import h5py
 import sys

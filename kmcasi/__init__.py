@@ -6,6 +6,8 @@
 #Magnetization evolution along the diagonal
 #From 22/02/2018 on --->
 #Removed "Energy coefficient", since we need a more complex analysis
+#From 13/11/2018 on --->
+#Converted to a proper Python module (V1.0)
 #-----------------------------------------------
 
 import numpy as np
@@ -17,9 +19,6 @@ from scipy.integrate import odeint
 import h5py
 import tkinter as tk
 from tkinter import filedialog
-
-out_path1 = 'D:\Documents\KMC\ASI'
-out_path2 = 'E:\Matteo\Python\KMC\Data\output'
 
 myG = '#00f700'
 myB = '#0000ff'
