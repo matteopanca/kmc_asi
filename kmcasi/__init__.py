@@ -20,6 +20,9 @@ import h5py
 import tkinter as tk
 from tkinter import filedialog
 
+figsize_double = (16, 8)
+figsize_single = (9, 9)
+
 myG = '#00f700'
 myB = '#0000ff'
 myR = '#ff0000'
@@ -769,7 +772,7 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 	atd = ((2,2), (5,5), (8,8), (2,5), (5,8), (2,8), (7,0), (7,1), (7,3), (7,4), (7,6), (7,9))
 	ats = ((0,2), (1,2), (3,2))
 	
-	fig = plt.figure(figsize=(20,8))
+	fig = plt.figure(figsize=figsize_double)
 	ax1 = fig.add_subplot(1,2,1)
 	cmesh = ax1.pcolormesh(np.arange(11)-0.5, np.arange(11)-0.5, transitions_double, edgecolor='k', cmap=plt.get_cmap(cmap_name))
 	plt.colorbar(cmesh)
@@ -857,10 +860,10 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 			counter += 1
 	
 	size_points = 20e4*(1/max(rows, cols))**2
-	fig = plt.figure(figsize=(10,10))
+	fig = plt.figure(figsize=figsize_single)
 	ax = fig.add_subplot(1,1,1)
 	ax.scatter(x_coord, y_coord, size_points, color, edgecolors=color)
-	plt.title('{:d} x {:d} Vertices - Run {:d}, Image {:d}, Step {:.1f} - t = {:.4e} s'.format(rows, cols, run, image, step, t))
+	ax.set_title('{:d} x {:d} Vertices - Run {:d}, Image {:d}, Step {:.1f} - t = {:.4e} s'.format(rows, cols, run, image, step, t))
 	ax.axis('scaled')
 	ax.set_xlim([-1, cols])
 	ax.set_ylim([-1, rows])
@@ -904,17 +907,17 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
 	
-	fig = plt.figure(figsize=(12,12))
+	fig = plt.figure(figsize=figsize_single)
 	ax = fig.add_subplot(1,1,1)
 	for i in range(4):
 		ax.semilogx(t[1:], evo_4vertices[1:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1)) #initial value skipped because of LOG plot (t=0 is not drawable)
 		#ax.plot(t, evo_4vertices[:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1))
 	if run == -1 or run == -2:
-		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
+		ax.set_title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
 	else:
-		plt.title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
-	plt.xlabel('t (s)')
-	plt.ylabel('P(t)')
+		ax.set_title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
+	ax.set_xlabel('t (s)')
+	ax.set_ylabel('P(t)')
 	ax.set_ylim([0, 1])
 	if image_flag and run != -1:
 		for i in range(images_num-1):
@@ -978,17 +981,17 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 		if (i != 5) and (i != 10):
 			evo_CompleteT1[:, 2] += evo[:, i]
 	
-	fig = plt.figure(figsize=(12,12))
+	fig = plt.figure(figsize=figsize_single)
 	ax = fig.add_subplot(1,1,1)
 	for i in range(2):
 		ax.semilogx(t[1:], evo_CompleteT1[1:,i], '-', color=color_dictionary_T1[i], linewidth=2, label='T1 Phase {:d}'.format(i)) #initial value skipped because of LOG plot (t=0 is not drawable)
 	ax.semilogx(t[1:], evo_CompleteT1[1:,2], '-', color=color_dictionary_T1[2], linewidth=2, label='Boundary') #initial value skipped because of LOG plot (t=0 is not drawable)
 	if run == -1 or run == -2:
-		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
+		ax.set_title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
 	else:
-		plt.title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
-	plt.xlabel('t (s)')
-	plt.ylabel('P(t)')
+		ax.set_title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
+	ax.set_xlabel('t (s)')
+	ax.set_ylabel('P(t)')
 	ax.set_ylim([0, 1])
 	if image_flag and run != -1:
 		for i in range(images_num-1):
@@ -1046,27 +1049,27 @@ def plot_meq_sva(input_name, run, ax='', file_flag=True):
 	
 	color_dictionary_4vert = [myO, myM, myC, myK]
 	if ax == '':
-		fig = plt.figure(figsize=(12,12))
+		fig = plt.figure(figsize=figsize_single)
 		ax = fig.add_subplot(1,1,1)
 	for i in range(4):
 		#initial value skipped because of LOG plot (t=0 is not drawable)
 		ax.semilogx(t[1:], y_sol[1:, i], '--', color=color_dictionary_4vert[i], linewidth=2, label='T{:d} - SVA M. Eq.'.format(i+1))
-	plt.xlabel('t (s)')
-	plt.ylabel('P(t)')
+	ax.set_xlabel('t (s)')
+	ax.set_ylabel('P(t)')
 	ax.set_ylim([0, 1])
 	ax.grid(True)
 	ax.legend(loc='best')
 	
 	evo_diff_meq = evo_4vertices - y_sol
-	fig_diff = plt.figure(figsize=(12,12))
+	fig_diff = plt.figure(figsize=figsize_single)
 	ax_diff = fig_diff.add_subplot(1,1,1)
 	for i in range(4):
 		#initial value skipped because of LOG plot (t=0 is not drawable)
 		ax_diff.semilogx(t[1:], evo_diff_meq[1:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d} - Diff.'.format(i+1))
 	ax_diff.axhline(0, color='k')
-	plt.title('Evolution vs SVA M. Eq. for ' + ax.get_title())
-	plt.xlabel('t (s)')
-	plt.ylabel('P$_{Evo}$(t) - P$_{SVA-MEq}$(t)')
+	ax_diff.set_title('Evolution vs SVA M. Eq. for ' + ax.get_title())
+	ax_diff.set_xlabel('t (s)')
+	ax_diff.set_ylabel('P$_{Evo}$(t) - P$_{SVA-MEq}$(t)')
 	#ax_diff.set_ylim([0, 1])
 	ax_diff.grid(True)
 	ax_diff.legend(loc='best')
@@ -1169,7 +1172,7 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	
 	color_dictionary_4vert = [myM, myC, myK, myO]
 	if ax == '':
-		fig = plt.figure(figsize=(12,12))
+		fig = plt.figure(figsize=figsize_single)
 		ax = fig.add_subplot(1,1,1)
 	for i in range(4):
 		if noT1[0]:
@@ -1178,23 +1181,23 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 			label_text = 'T{:d} - M. Eq.'.format(i+1)
 		#initial value skipped because of LOG plot (t=0 is not drawable)
 		ax.semilogx(t[1:], y_sol[1:, i], '--', color=color_dictionary_4vert[i], linewidth=2, label=label_text)
-	plt.xlabel('t (s)')
-	plt.ylabel('P(t)')
+	ax.set_xlabel('t (s)')
+	ax.set_ylabel('P(t)')
 	ax.set_ylim([0, 1])
 	ax.grid(True)
 	ax.legend(loc='best')
 	
 	if not(noT1[0]):
 		evo_diff_meq = evo_4vertices - y_sol
-		fig_diff = plt.figure(figsize=(12,12))
+		fig_diff = plt.figure(figsize=figsize_single)
 		ax_diff = fig_diff.add_subplot(1,1,1)
 		for i in range(4):
 			#initial value skipped because of LOG plot (t=0 is not drawable)
 			ax_diff.semilogx(t[1:], evo_diff_meq[1:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d} - Diff.'.format(i+1))
 		ax_diff.axhline(0, color='k')
-		plt.title('Evolution vs M. Eq. for ' + ax.get_title())
-		plt.xlabel('t (s)')
-		plt.ylabel('P$_{Evo}$(t) - P$_{MEq}$(t)')
+		ax_diff.set_title('Evolution vs M. Eq. for ' + ax.get_title())
+		ax_diff.set_xlabel('t (s)')
+		ax_diff.set_ylabel('P$_{Evo}$(t) - P$_{MEq}$(t)')
 		#ax_diff.set_ylim([0, 1])
 		ax_diff.grid(True)
 		ax_diff.legend(loc='best')
@@ -1215,7 +1218,7 @@ def plot_m_all(input_name, file_flag=True):
 	if 'merged' in f.keys():
 		num_runs -= 1
 	
-	fig = plt.figure(figsize=(12,12))
+	fig = plt.figure(figsize=figsize_single)
 	ax = fig.add_subplot(1,1,1)
 	list_max = []
 	list_min = []
@@ -1228,9 +1231,9 @@ def plot_m_all(input_name, file_flag=True):
 		ax.semilogx(t[1:], m[1:], '-', color=my_color(run), linewidth=2, label='Run {:d}'.format(run)) #initial value skipped because of LOG plot (t=0 is not drawable)
 		list_max.append(m.max())
 		list_min.append(m.min())
-	plt.title('All the {:d} runs in the simulation'.format(num_runs))
-	plt.xlabel('t (s)')
-	plt.ylabel('M along main diagonal (a.u.)')
+	ax.set_title('All the {:d} runs in the simulation'.format(num_runs))
+	ax.set_xlabel('t (s)')
+	ax.set_ylabel('M along main diagonal (a.u.)')
 	ax.set_ylim([np.min(list_min)-0.05, np.max(list_max)+0.05])
 	ax.axhline(0, color='k')
 	ax.grid(True)
@@ -1274,15 +1277,15 @@ def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 	if file_flag:
 		f.close()
 	
-	fig = plt.figure(figsize=(12,12))
+	fig = plt.figure(figsize=figsize_single)
 	ax = fig.add_subplot(1,1,1)
 	ax.semilogx(t[1:], m[1:], '-', color=myB, linewidth=2, label='Simulated M') #initial value skipped because of LOG plot (t=0 is not drawable)
 	if run == -1 or run == -2:
-		plt.title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
+		ax.set_title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
 	else:
-		plt.title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
-	plt.xlabel('t (s)')
-	plt.ylabel('M along main diagonal (a.u.)')
+		ax.set_title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
+	ax.set_xlabel('t (s)')
+	ax.set_ylabel('M along main diagonal (a.u.)')
 	ax.set_ylim([m.min()-0.05, m.max()+0.05])
 	ax.axhline(0, color='k')
 	if image_flag and run != -1:
@@ -1394,13 +1397,13 @@ def time_hist(input_name, run, limits=(0, -1), num_bins=100, fit=False, file_fla
 	t_diff = t[1:] - t[:-1]
 	num_data = len(t_diff)
 	
-	fig = plt.figure(figsize=(12,12))
+	fig = plt.figure(figsize=figsize_single)
 	ax = fig.add_subplot(1,1,1)
 	n, bins, patches = ax.hist(t_diff, num_bins, facecolor='green', alpha=0.5, label='Hist.')
 	ax.xaxis.get_major_formatter().set_powerlimits([-2, 2])
-	plt.title('Time Satistics - Run {:d} - Events: {:d} - Total Time: {:.4e} s'.format(run, num_data, timeLimit))
-	plt.xlabel('$\Delta$t (s)')
-	plt.ylabel('Events')
+	ax.set_title('Time Satistics - Run {:d} - Events: {:d} - Total Time: {:.4e} s'.format(run, num_data, timeLimit))
+	ax.set_xlabel('$\Delta$t (s)')
+	ax.set_ylabel('Events')
 	ax.grid(True)
 	
 	if fit:
@@ -1441,12 +1444,12 @@ def time_evoDt(input_name, run, file_flag=True):
 	t_diff = t[1:] - t[:-1]
 	num_data = len(t_diff)
 	
-	fig = plt.figure(figsize=(12,12))
+	fig = plt.figure(figsize=figsize_single)
 	ax = fig.add_subplot(1,1,1)
 	ax.plot(np.arange(num_data), t_diff, '-b', linewidth=1)
-	plt.title('Time Satistics - Run {:d} - Events: {:d} - Total Time: {:.4e} s'.format(run, num_data, timeLimit))
-	plt.xlabel('Step')
-	plt.ylabel('$\Delta$t (s)')
+	ax.set_title('Time Satistics - Run {:d} - Events: {:d} - Total Time: {:.4e} s'.format(run, num_data, timeLimit))
+	ax.set_xlabel('Step')
+	ax.set_ylabel('$\Delta$t (s)')
 	ax.grid(True)
 	plt.show()
 
@@ -1478,19 +1481,19 @@ def time_limit(input_name, file_flag=True):
 	fmt = ticker.ScalarFormatter(useOffset=False)
 	fmt.set_powerlimits((-2,2))
 	
-	fig = plt.figure(figsize=(16,10))
+	fig = plt.figure(figsize=figsize_single)
 	ax1 = fig.add_subplot(1,2,1)
 	ax1.plot(run_list, timeLimit_list, '-ob', linewidth=2)
-	plt.title('Max Time - {:d} Runs'.format(num_runs))
-	plt.xlabel('Run')
-	plt.ylabel('Max Time (s)')
+	ax1.set_title('Max Time - {:d} Runs'.format(num_runs))
+	ax1.set_xlabel('Run')
+	ax1.set_ylabel('Max Time (s)')
 	ax1.grid(True)
-	ax2= fig.add_subplot(1,2,2)
+	ax2 = fig.add_subplot(1,2,2)
 	ax2.yaxis.set_major_formatter(fmt)
 	ax2.scatter(kmcSteps_list, timeLimit_list)
-	plt.title('Max Time vs KMC Steps'.format(num_runs))
-	plt.xlabel('KMC Steps')
-	plt.ylabel('Max Time (s)')
+	ax2.set_title('Max Time vs KMC Steps'.format(num_runs))
+	ax2.set_xlabel('KMC Steps')
+	ax2.set_ylabel('Max Time (s)')
 	ax2.set_ylim(ax1.get_ylim())
 	ax2.grid(True)
 	plt.tight_layout()
