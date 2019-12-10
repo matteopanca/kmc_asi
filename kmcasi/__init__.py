@@ -8,6 +8,8 @@
 #Removed "Energy coefficient", since we need a more complex analysis
 #From 13/11/2018 on --->
 #Converted to a proper Python module (V1.0)
+#From 10/12/2019 on --->
+#Minor changes and added comments (still V1.0)
 #-----------------------------------------------
 
 import numpy as np
@@ -17,8 +19,8 @@ from matplotlib.patches import Rectangle
 from scipy.optimize import curve_fit
 from scipy.integrate import odeint
 import h5py
-import tkinter as tk
-from tkinter import filedialog
+import tkinter as tk #comment if not working, together with the "get_path" function
+from tkinter import filedialog #comment if not working, together with the "get_path" function
 
 figsize_double = (16, 8)
 figsize_single = (9, 9)
@@ -458,7 +460,8 @@ class Array:
 		for i in range(self.totEl):
 			self.m[0] += 2*self.list[i].dir - 1
 	
-	#Time evolution (for kmcSteps) and saving the output 
+	#Time evolution (for kmcSteps) and saving the output
+	#This is the method governing the simulation
 	def run(self, run_id=-1):
 		if run_id != -1:
 			self.input_run = run_id
@@ -501,11 +504,13 @@ class Array:
 		self.evolution_T1 /= self.input_rows*self.input_cols
 		self.m /= self.totEl
 
-#-------------------- SAVE Function --------------------
+#-------------------- SAVE Functions --------------------
 
 #Save the time evolution and the images (with attributes)
 #No more part of the Array Class
 def save_evolution(f, obj):
+	"""Save the time evolution and the images (with attributes)."""
+	
 	dset_evo_name = 'run{:d}/evo'.format(obj.input_run)
 	dset_evo = f.create_dataset(dset_evo_name, data=obj.evolution)
 	dset_evo.attrs['input_double'] = obj.input_double
@@ -553,6 +558,8 @@ def save_evolution(f, obj):
 
 #Average all the runs in a given HDF5 file
 def avg_runs(f):
+	"""Average all the runs in a given HDF5 file."""
+	
 	if 'avg' in f.keys():
 		del f['avg']
 		print('AVG group deleted')
@@ -610,6 +617,8 @@ def avg_runs(f):
 
 #Merge ALL the runs in a given HDF5 file
 def merge_runs(f):
+	"""Merge ALL the runs in a given HDF5 file."""
+	
 	if 'merged' in f.keys():
 		del f['merged']
 		print('MERGED group deleted')
@@ -675,6 +684,10 @@ def merge_runs(f):
 
 #4-vertex equilibrium state (time-weighted states) - It considers only t >= start_time
 def calc_eq(input_name, start_time, file_flag=True):
+	"""4-vertex equilibrium state (time-weighted states).
+	It considers only t >= start_time.
+	"""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -705,8 +718,25 @@ def calc_eq(input_name, start_time, file_flag=True):
 
 #-------------------- DRAWING Functions --------------------
 
-#Draw a map with the transition distribution (given the run) - both double and single transitions
+#Draw a map with the transition distribution (given the run) - both double and single transitions (if any)
 def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=True):
+	"""Draw a map with the transition distribution (given the run).
+	Both double-vertex and single-vertex transitions (if any) are considered.
+	
+	- DICTIONARY -
+	 0 - 11
+	 1 - 12
+	 2 - 13
+	 3 - 14
+	 4 - 22
+	 5 - 23
+	 6 - 24
+	 7 - 33
+	 8 - 34
+	 9 - 44
+	--------------
+	"""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -768,7 +798,7 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 	# 7 - 33
 	# 8 - 34
 	# 9 - 44
-	#-------------
+	#--------------
 	atd = ((2,2), (5,5), (8,8), (2,5), (5,8), (2,8), (7,0), (7,1), (7,3), (7,4), (7,6), (7,9))
 	ats = ((0,2), (1,2), (3,2))
 	
@@ -805,6 +835,16 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 
 #Draw colored map (given the run and the image num.)
 def draw_map(input_name, run, image, type='v', file_flag=True):
+	"""Draw colored vertex map (given the run and the image number).
+	The "type" argument specifies what meaning the colours have:
+	 v - 4 vertices
+	 1 - only T1 (everything else is black)
+	 2 - only T2 (everything else is black)
+	 3 - only T3 (everything else is black)
+	 4 - only T4 (everything else is black)
+	 p - T1 phases
+	"""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -872,6 +912,10 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 
 #Plot the 4 vertices evolution (given the run)
 def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
+	"""Plot the 4 vertices evolution (given the run).
+	The curves can be saved in a TXT file.
+	"""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -940,6 +984,8 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	
 #Plot the T1 phases evolution (given the run)
 def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
+	"""Plot the T1 phases evolution (given the run)."""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1000,8 +1046,12 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 	ax.legend(loc='best')
 	plt.show()
 
-#Plot the (4 vertices) SVA MASTER EQUATION evolution given the run and (optionally) the axis
+#Plot the (4 vertices) SVA MASTER EQUATION evolution given the run and (optionally) the destination axis
 def plot_meq_sva(input_name, run, ax='', file_flag=True):
+	"""Plot the (4 vertices) SVA MASTER EQUATION evolution given the run
+	and (optionally) the destination axis.
+	"""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1079,6 +1129,10 @@ def plot_meq_sva(input_name, run, ax='', file_flag=True):
 
 #Plot the 4 vertices MASTER EQUATION evolution given the run and (optionally) the axis (Simple DVA M. Eq.)
 def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
+	"""Plot the 4 vertices MASTER EQUATION evolution given the run
+	and (optionally) the axis (Simple DVA M. Eq.).
+	"""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1205,8 +1259,10 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	plt.show()
 	return y0_4
 
-#Plot all the m evolutions in the file
+#Plot all the magn. evolutions contained in the HDF5 file in the same figure
 def plot_m_all(input_name, file_flag=True):
+	"""Plot all the magn. evolutions contained in the HDF5 file in the same figure."""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1243,8 +1299,12 @@ def plot_m_all(input_name, file_flag=True):
 	if file_flag:
 		f.close()
 
-#Plot the m evolution (given the run)
+#Plot the magn. evolution (given the run)
 def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
+	"""Plot the magn. evolution (given the run).
+	The magn. can be saved in a TXT file.
+	"""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1309,6 +1369,11 @@ def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 
 #Fit of the magnetization evolution (given the run)
 def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
+	"""Fit of the magnetization evolution (given the run).
+	The "type" argument can be 'str' for a stretched exponential
+	or 'double' for a double exponential.
+	"""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1371,6 +1436,8 @@ def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
 
 #Histogram of dt (and hopefully fit)
 def time_hist(input_name, run, limits=(0, -1), num_bins=100, fit=False, file_flag=True):
+	"""Histogram of dt (and hopefully fit)."""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1423,6 +1490,8 @@ def time_hist(input_name, run, limits=(0, -1), num_bins=100, fit=False, file_fla
 
 #Dt step evolution
 def time_evoDt(input_name, run, file_flag=True):
+	"""Dt step evolution."""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1453,8 +1522,10 @@ def time_evoDt(input_name, run, file_flag=True):
 	ax.grid(True)
 	plt.show()
 
-#Plot of the 'timeLimit' attributes
+#Plot of the "timeLimit" attributes
 def time_limit(input_name, file_flag=True):
+	"""Plot of the "timeLimit" attributes."""
+	
 	if file_flag:
 		f = h5py.File(input_name, 'r')
 	else:
@@ -1499,8 +1570,15 @@ def time_limit(input_name, file_flag=True):
 	plt.tight_layout()
 	plt.show()
 
-#Get the selected file's path in a string
+#-------------------- AUXILIARY Functions --------------------
+
 def get_path(start_path='', filter=(('HDF5 files', '*.hdf5'),('All files', '*'))):
+	"""Get the selected file's path in a string.
+	
+	You can safely comment it if not working
+	(together with the related "tkinter" packages).
+	"""
+	
 	root = tk.Tk() #hide the root window
 	root.withdraw() #hide the root window
 	return filedialog.askopenfilename(initialdir=start_path, title='Select input file', filetypes=filter)
