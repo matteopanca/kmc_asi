@@ -723,11 +723,15 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 	"""Draw a map with the transition distribution (given the run).
 	Both double-vertex and single-vertex transitions (if any) are considered.
 	
+	The masked data are returned. To access the tables, use
+	 transitions_double.data[:10, :10]
+	 transitions_single.data[:4, :4]
+	
 	- DICTIONARY -
-	 0 - 11
-	 1 - 12
-	 2 - 13
-	 3 - 14
+	 0 - 11 (1 for S.V.)
+	 1 - 12 (2 for S.V.)
+	 2 - 13 (3 for S.V.)
+	 3 - 14 (4 for S.V.)
 	 4 - 22
 	 5 - 23
 	 6 - 24
