@@ -19,8 +19,6 @@ from matplotlib.patches import Rectangle
 from scipy.optimize import curve_fit
 from scipy.integrate import odeint
 import h5py
-import tkinter as tk #comment if not working, together with the "get_path" function
-from tkinter import filedialog #comment if not working, together with the "get_path" function
 
 figsize_double = (16, 8)
 figsize_single = (9, 9)
@@ -1573,16 +1571,3 @@ def time_limit(input_name, file_flag=True):
 	ax2.grid(True)
 	plt.tight_layout()
 	plt.show()
-
-#-------------------- AUXILIARY Functions --------------------
-
-def get_path(start_path='', filter=(('HDF5 files', '*.hdf5'),('All files', '*'))):
-	"""Get the selected file's path in a string.
-	
-	You can safely comment it if not working
-	(together with the related "tkinter" packages).
-	"""
-	
-	root = tk.Tk() #hide the root window
-	root.withdraw() #hide the root window
-	return filedialog.askopenfilename(initialdir=start_path, title='Select input file', filetypes=filter)
