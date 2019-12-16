@@ -10,6 +10,8 @@
 #Converted to a proper Python module (V1.0)
 #From 10/12/2019 on --->
 #Minor changes and added comments (still V1.0)
+#From 10/12/2019 on --->
+#Added "kmc_simulation.py" as function (V1.1)
 #-----------------------------------------------
 
 import numpy as np
@@ -19,6 +21,7 @@ from matplotlib.patches import Rectangle
 from scipy.optimize import curve_fit
 from scipy.integrate import odeint
 import h5py
+from time import perf_counter
 
 figsize_double = (16, 8)
 figsize_single = (9, 9)
@@ -460,7 +463,7 @@ class Array:
 	
 	#Time evolution (for kmcSteps) and saving the output
 	#This is the method governing the simulation
-	def run(self, run_id=-1):
+	def run(self, run_id=-1, verbose=True):
 		if run_id != -1:
 			self.input_run = run_id
 		rand_island = np.random.random_sample(self.input_kmcSteps)
@@ -469,9 +472,9 @@ class Array:
 		self.img_archive[:, :, img_counter] = np.copy(self.map) #record starting image
 		oldProgress = 0
 		for i in np.arange(self.input_kmcSteps):
-			#Progress
+			#Progress - Is TQDM a problem for parallelism?
 			progress = np.floor(100.0*i/self.input_kmcSteps)
-			if progress != oldProgress:
+			if (progress != oldProgress) and verbose:
 				print('Run {:d} - Progress: {:.1f}%'.format(self.input_run, progress))
 				oldProgress = progress
 			#Identify the island to be flipped
@@ -1571,3 +1574,51 @@ def time_limit(input_name, file_flag=True):
 	ax2.grid(True)
 	plt.tight_layout()
 	plt.show()
+
+#-------------------- AUXILIARY Functions --------------------
+
+#Run simulations given the config. file
+def kmc_simulation(config_file, verbose=False):
+	"""Run simulations given the config. file."""
+	
+	start_time = perf_counter()
+	
+	#Import the configuration file
+	control_list = []
+	with open(config_file, 'r') as f:
+		control_list.append(f.readline().rstrip()) #File with DOUBLE Probs.
+		control_list.append(f.readline().rstrip()) #File with SINGLE Probs.
+		control_list.append(float(f.readline().rstrip())) #Attempt frequency - Double (Hz)
+		control_list.append(float(f.readline().rstrip())) #Attempt frequency - Single (Hz)
+		control_list.append(int(f.readline().rstrip())) #Vertices in each row
+		control_list.append(int(f.readline().rstrip())) #Vertices in each column
+		control_list.append(f.readline().rstrip()) #Init type ('1', '2', '3', '4' or 'r')
+		control_list.append(f.readline().rstrip()) #Boundary conditions: 'finite' (default) or 'pbc'
+		control_list.append(float(f.readline().rstrip())) #Disorder (in fractional units)
+		control_list.append(int(f.readline().rstrip())) #Steps for each run
+		control_list.append(float(f.readline().rstrip())) #Time limit for each run
+		control_list.append(int(f.readline().rstrip())) #Number of images to be saved
+		num_runs = int(f.readline().rstrip()) #Number of runs
+		output_name = f.readline().rstrip() #Output file
+	prob_double = np.loadtxt(control_list[0], dtype=np.float_)
+	prob_single = np.loadtxt(control_list[1], dtype=np.float_)
+	
+	#Running the simulation ("num_runs" times)
+	output_file = h5py.File(output_name, 'a')
+	
+	run_offset = 0
+	for p in output_file.keys():
+		if p[0] == 'r':
+			run_offset += 1
+	
+	for i in range(num_runs):
+		print('----- RUN {:d} -----'.format(i))
+		arrayObj = Array(control_list, (prob_double, prob_single))
+		arrayObj.run(run_offset + i, verbose)
+		save_evolution(output_file, arrayObj)
+	avg_runs(output_file)
+	
+	output_file.close()
+	
+	stop_time = perf_counter()
+	print('Elapsed time (s): {:.4f}'.format(stop_time - start_time))
