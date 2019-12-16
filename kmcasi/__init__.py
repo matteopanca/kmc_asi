@@ -1578,8 +1578,10 @@ def time_limit(input_name, file_flag=True):
 #-------------------- AUXILIARY Functions --------------------
 
 #Run simulations given the config. file
-def kmc_simulation(config_file, verbose=False):
-	"""Run simulations given the config. file."""
+def kmc_simulation(config_file, create_mode='a', verbose=False):
+	"""Run simulations given the config. file.
+	The argument "create_mode" should be either 'a' (to append) or 'w' (to overwrite).
+	"""
 	
 	start_time = perf_counter()
 	
@@ -1604,7 +1606,7 @@ def kmc_simulation(config_file, verbose=False):
 	prob_single = np.loadtxt(control_list[1], dtype=np.float_)
 	
 	#Running the simulation ("num_runs" times)
-	output_file = h5py.File(output_name, 'a')
+	output_file = h5py.File(output_name, create_mode)
 	
 	run_offset = 0
 	for p in output_file.keys():
