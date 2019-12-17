@@ -221,7 +221,7 @@ class Array:
 			freq_out = self.freq_single[row_index, col_index]
 		else:
 			freq_out = 0
-			print('---> ERROR in initializing list_freq') #DEBUG control
+			print('---> ERROR in initializing list_freq.') #DEBUG control
 		if self.input_disorderStDev == 0:
 			return freq_out
 		else:
@@ -783,7 +783,7 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 		elif flag_single[i]:
 			transitions_single[lst_to_consider[i, 1], lst_to_consider[i, 0]] += 1
 		else:
-			raise RuntimeError('This error should NOT happen')
+			raise RuntimeError('This error should NOT happen!')
 	transitions_double = np.ma.masked_array(transitions_double, transitions_double == 0)
 	transitions_single = np.ma.masked_array(transitions_single, transitions_single == 0)
 	transitions_double /= n_trans
@@ -1579,29 +1579,38 @@ def time_limit(input_name, file_flag=True):
 
 #Run simulations given the config. file
 def kmc_simulation(config_file, create_mode='a', verbose=False):
-	"""Run simulations given the config. file.
+	"""Run simulations given the config. file path.
+	The first argument can also be a list instead of a file path.
 	The argument "create_mode" should be either 'a' (to append) or 'w' (to overwrite).
 	"""
 	
 	start_time = perf_counter()
 	
-	#Import the configuration file
-	control_list = []
-	with open(config_file, 'r') as f:
-		control_list.append(f.readline().rstrip()) #File with DOUBLE Probs.
-		control_list.append(f.readline().rstrip()) #File with SINGLE Probs.
-		control_list.append(float(f.readline().rstrip())) #Attempt frequency - Double (Hz)
-		control_list.append(float(f.readline().rstrip())) #Attempt frequency - Single (Hz)
-		control_list.append(int(f.readline().rstrip())) #Vertices in each row
-		control_list.append(int(f.readline().rstrip())) #Vertices in each column
-		control_list.append(f.readline().rstrip()) #Init type ('1', '2', '3', '4' or 'r')
-		control_list.append(f.readline().rstrip()) #Boundary conditions: 'finite' (default) or 'pbc'
-		control_list.append(float(f.readline().rstrip())) #Disorder (in fractional units)
-		control_list.append(int(f.readline().rstrip())) #Steps for each run
-		control_list.append(float(f.readline().rstrip())) #Time limit for each run
-		control_list.append(int(f.readline().rstrip())) #Number of images to be saved
-		num_runs = int(f.readline().rstrip()) #Number of runs
-		output_name = f.readline().rstrip() #Output file
+	if type(config_file) == str:
+		#Import the configuration file
+		control_list = []
+		with open(config_file, 'r') as f:
+			control_list.append(f.readline().rstrip()) #File with DOUBLE Probs.
+			control_list.append(f.readline().rstrip()) #File with SINGLE Probs.
+			control_list.append(float(f.readline().rstrip())) #Attempt frequency - Double (Hz)
+			control_list.append(float(f.readline().rstrip())) #Attempt frequency - Single (Hz)
+			control_list.append(int(f.readline().rstrip())) #Vertices in each row
+			control_list.append(int(f.readline().rstrip())) #Vertices in each column
+			control_list.append(f.readline().rstrip()) #Init type ('1', '2', '3', '4' or 'r')
+			control_list.append(f.readline().rstrip()) #Boundary conditions: 'finite' (default) or 'pbc'
+			control_list.append(float(f.readline().rstrip())) #Disorder (in fractional units)
+			control_list.append(int(f.readline().rstrip())) #Steps for each run
+			control_list.append(float(f.readline().rstrip())) #Time limit for each run
+			control_list.append(int(f.readline().rstrip())) #Number of images to be saved
+			num_runs = int(f.readline().rstrip()) #Number of runs
+			output_name = f.readline().rstrip() #Output file
+	elif type(config_file) == list:
+		#The input argument can already be a list
+		control_list = config_file[:12]
+		num_runs = config_file[12]
+		output_name = config_file[13]
+	else:
+		raise RuntimeError('Argument type not available as input.')
 	prob_double = np.loadtxt(control_list[0], dtype=np.float_)
 	prob_single = np.loadtxt(control_list[1], dtype=np.float_)
 	

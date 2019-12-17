@@ -1,14 +1,14 @@
-1) File (+ path) containing the probabilities for the Double Vertex
-2) File (+ path) containing the probabilities for the Single Vertex
-3) Attempt Frequency - Double (Hz)
-4) Attempt Frequency - Single (Hz)
-5) Number of Vertex rows
-6) Number of Vertex columns
-7) Initial condition ('1', '2', '2m', '3', '4' or 'r')
-8) Boundary condition ('finite' or 'pbc')
-9) Standard Deviation for introducing disorder (with respect to barrier energies)
-10) Number of KMC steps
-11) Time Limit (s) - NOT USED
-12) Number of images to be saved for each run
-13) Number of runs
-14) Output HDF5 file (+ path): put the '.hdf5' extension
+1) File (+ path) containing the probabilities for the Double Vertex - string
+2) File (+ path) containing the probabilities for the Single Vertex - string
+3) Attempt Frequency - Double (Hz) - float
+4) Attempt Frequency - Single (Hz) - float
+5) Number of Vertex rows - int
+6) Number of Vertex columns - int
+7) Initial condition ('1', '2', '2m', '3', '4' or 'r') - string
+8) Boundary condition ('finite' or 'pbc') - string
+9) Standard Deviation for introducing disorder (with respect to barrier energies) - float
+10) Number of KMC steps - int
+11) Time Limit (s) - float - NOT USED
+12) Number of images to be saved for each run - int
+13) Number of runs - int
+14) Output HDF5 file (+ path): put the '.hdf5' extension - string
