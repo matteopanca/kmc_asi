@@ -12,6 +12,8 @@
 #Minor changes and added comments (still V1.0)
 #From 10/12/2019 on --->
 #Added "kmc_simulation.py" as function (V1.1)
+#From 17/12/2019 on --->
+#Added "nrc" evolution (V1.2)
 #-----------------------------------------------
 
 import numpy as np
@@ -117,6 +119,7 @@ class Array:
 		
 		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
 		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
+		self.nrc = np.zeros((self.input_kmcSteps, 3), dtype=np.int_) #index, [neighbours, row, column]
 		
 		#Methods for initializing the array
 		self.generate_array()
@@ -157,6 +160,7 @@ class Array:
 		
 		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
 		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
+		self.nrc = np.zeros((self.input_kmcSteps, 3), dtype=np.int_) #index, [neighbours, row, column]
 		
 		#Initialize the "new" evolution
 		self.evolution[0, :] = old_obj.evolution[-1, :]*self.input_rows*self.input_cols
@@ -166,7 +170,7 @@ class Array:
 		
 		#Initialize list_freq and list_partialSum
 		for i in range(self.totEl):
-			self.list_freq[i] = self.get_freq(i)
+			self.list_freq[i], _ = self.get_freq(i)
 		self.list_partialSum[0] = self.list_freq[0]
 		for i in range(self.totEl-1):
 			self.list_partialSum[i+1] = self.list_partialSum[i] + self.list_freq[i+1]
@@ -223,12 +227,12 @@ class Array:
 			freq_out = 0
 			print('---> ERROR in initializing list_freq.') #DEBUG control
 		if self.input_disorderStDev == 0:
-			return freq_out
+			return freq_out, (neigh_num, row_index, col_index)
 		else:
 			if neigh_num == 6:
-				return self.input_attemptFreq[0]*np.power(freq_out/self.input_attemptFreq[0], 1 + self.list[index].disorder) #Introducing disorder
+				return self.input_attemptFreq[0]*np.power(freq_out/self.input_attemptFreq[0], 1 + self.list[index].disorder), (neigh_num, row_index, col_index) #Introducing disorder
 			else:
-				return self.input_attemptFreq[1]*np.power(freq_out/self.input_attemptFreq[1], 1 + self.list[index].disorder) #Introducing disorder
+				return self.input_attemptFreq[1]*np.power(freq_out/self.input_attemptFreq[1], 1 + self.list[index].disorder), (neigh_num, row_index, col_index) #Introducing disorder
 	
 	def get_event_index(self, prob):
 		boundary = prob*self.list_partialSum[-1] #It should never be self.list_partialSum[-1]
@@ -452,7 +456,7 @@ class Array:
 		
 		#Initialize list_freq and list_partialSum
 		for i in range(self.totEl):
-			self.list_freq[i] = self.get_freq(i)
+			self.list_freq[i], _ = self.get_freq(i)
 		self.list_partialSum[0] = self.list_freq[0]
 		for i in range(self.totEl-1):
 			self.list_partialSum[i+1] = self.list_partialSum[i] + self.list_freq[i+1]
@@ -488,9 +492,12 @@ class Array:
 			#Update t - TO BE DONE BEFORE UPDATING list_partialSum
 			self.t[i+1] = self.t[i] - np.log(rand_time[i])/self.list_partialSum[-1]
 			#Update list_freq
-			self.list_freq[island_to_flip] = self.get_freq(island_to_flip)
+			self.list_freq[island_to_flip], nrc = self.get_freq(island_to_flip)
 			for j in range(self.list[island_to_flip].neigh_num):
-				self.list_freq[self.list[island_to_flip].neigh_list[j]] = self.get_freq(self.list[island_to_flip].neigh_list[j])
+				self.list_freq[self.list[island_to_flip].neigh_list[j]], _ = self.get_freq(self.list[island_to_flip].neigh_list[j])
+			self.nrc[i, 0] = nrc[0] #Chosen row/column in the proper prob. table
+			self.nrc[i, 1] = nrc[1] #Chosen row/column in the proper prob. table
+			self.nrc[i, 2] = abs(nrc[2] - 1) #Chosen row/column in the proper prob. table (the step before)
 			#Update list_partialSum
 			self.list_partialSum[0] = self.list_freq[0]
 			for j in range(self.totEl-1):
@@ -548,6 +555,8 @@ def save_evolution(f, obj):
 	dset_doubleTrans = f.create_dataset(dset_doubleTrans_name, data=obj.trans_double)
 	dset_singleTrans_name = 'run{:d}/trans_single'.format(obj.input_run)
 	dset_singleTrans = f.create_dataset(dset_singleTrans_name, data=obj.trans_single)
+	dset_nrc_name = 'run{:d}/nrc'.format(obj.input_run)
+	dset_nrc = f.create_dataset(dset_nrc_name, data=obj.nrc)
 	
 	for i in range(obj.input_images):
 		dset_image_name = 'run{:d}/images/img{:d}'.format(obj.input_run, i)
@@ -635,6 +644,7 @@ def merge_runs(f):
 	m_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
 	doubleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
 	singleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
+	nrc_merged = np.zeros((kmcSteps_tot, 3), dtype=np.int_)
 	
 	evolution_run = f['run0/evo'].value
 	evolutionT1_run = f['run0/evo_T1'].value
@@ -642,12 +652,14 @@ def merge_runs(f):
 	m_run = f['run0/m'].value
 	doubleTrans_run = f['run0/trans_double'].value
 	singleTrans_run = f['run0/trans_single'].value
+	nrc_run = f['run0/nrc'].value
 	evolution_merged[0:kmcSteps[0]+1, :] = evolution_run
 	evolutionT1_merged[0:kmcSteps[0]+1, :] = evolutionT1_run
 	t_merged[0:kmcSteps[0]+1] = t_run
 	m_merged[0:kmcSteps[0]+1] = m_run
 	doubleTrans_merged[0:kmcSteps[0]] = doubleTrans_run
 	singleTrans_merged[0:kmcSteps[0]] = singleTrans_run
+	nrc_merged[0:kmcSteps[0]] = nrc_run
 	
 	start_index = kmcSteps[0] + 1
 	for run in range(num_runs-1):
@@ -658,12 +670,14 @@ def merge_runs(f):
 		m_run = f['run{:d}/m'.format(run+1)].value
 		doubleTrans_run = f['run{:d}/trans_double'.format(run+1)].value
 		singleTrans_run = f['run{:d}/trans_single'.format(run+1)].value
+		nrc_run = f['run{:d}/nrc'.format(run+1)].value
 		evolution_merged[start_index:stop_index, :] = evolution_run[1:, :]
 		evolutionT1_merged[start_index:stop_index, :] = evolutionT1_run[1:, :]
 		t_merged[start_index:stop_index] = t_run[1:]
 		m_merged[start_index:stop_index] = m_run[1:]
 		doubleTrans_merged[start_index-1:stop_index-1] = doubleTrans_run
 		singleTrans_merged[start_index-1:stop_index-1] = singleTrans_run
+		nrc_merged[start_index-1:stop_index-1] = nrc_run
 		start_index = stop_index
 		
 	#Save the merged run in the same HDF5 file
@@ -681,6 +695,7 @@ def merge_runs(f):
 	dset_evoT1_merged = f.create_dataset('merged/evo_T1', data=evolutionT1_merged)
 	dset_doubleTrans_merged = f.create_dataset('merged/trans_double', data=doubleTrans_merged)
 	dset_singleTrans_merged = f.create_dataset('merged/trans_single', data=singleTrans_merged)
+	dset_nrc_merged = f.create_dataset('merged/nrc', data=nrc_merged)
 	print('MERGED group created ({:d} runs)'.format(num_runs))
 
 #4-vertex equilibrium state (time-weighted states) - It considers only t >= start_time
