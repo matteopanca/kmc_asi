@@ -1633,3 +1633,4 @@ def kmc_simulation(config_file, create_mode='a', verbose=False):
 	
 	stop_time = perf_counter()
 	print('Elapsed time (s): {:.4f}'.format(stop_time - start_time))
+	return output_name
