@@ -10,10 +10,12 @@
 #Converted to a proper Python module (V1.0)
 #From 10/12/2019 on --->
 #Minor changes and added comments (still V1.0)
-#From 10/12/2019 on --->
+#From 16/12/2019 on --->
 #Added "kmc_simulation.py" as function (V1.1)
 #From 17/12/2019 on --->
-#Added "nrc" evolution (V1.2)
+#Added "nrc" evolution as dataset (V1.2)
+#From 05/01/2020 on --->
+#Added "param_gs" evolution as dataset, as suggested by Naemi Leo (V1.3)
 #-----------------------------------------------
 
 import numpy as np
@@ -108,6 +110,8 @@ class Array:
 		self.list_partialSum = np.zeros(self.totEl, dtype=np.float_)
 		self.evolution = np.zeros((self.input_kmcSteps+1, 16), dtype=np.float_)
 		self.evolution_T1 = np.zeros((self.input_kmcSteps+1, 2), dtype=np.float_)
+		self.ref_gs = 1 + np.zeros(self.totEl, dtype=np.int_)
+		self.param_gs = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
 		self.t = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
 		self.m = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
 		self.map = np.zeros((self.input_rows, self.input_cols), dtype=np.int_)
@@ -149,6 +153,8 @@ class Array:
 		self.list_partialSum = np.zeros(self.totEl, dtype=np.float_)
 		self.evolution = np.zeros((self.input_kmcSteps+1, 16), dtype=np.float_)
 		self.evolution_T1 = np.zeros((self.input_kmcSteps+1, 2), dtype=np.float_)
+		self.ref_gs = old_obj.ref_gs
+		self.param_gs = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
 		self.t = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
 		self.m = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
 		self.map = old_obj.map
@@ -165,6 +171,7 @@ class Array:
 		#Initialize the "new" evolution
 		self.evolution[0, :] = old_obj.evolution[-1, :]*self.input_rows*self.input_cols
 		self.evolution_T1[0, :] = old_obj.evolution_T1[-1, :]*self.input_rows*self.input_cols
+		self.param_gs[0] = old_obj.param_gs[-1]
 		self.t[0] = old_obj.t[-1]
 		self.m[0] = old_obj.m[-1]
 		
@@ -396,10 +403,20 @@ class Array:
 		rand_disorder = self.input_disorderStDev*np.random.randn(self.totEl)
 		for i in range(self.totEl):
 			self.list[i].disorder = rand_disorder[i]
-				
+	
+	#Return a value to be assigned to the "param_gs" attribute (brute-force approach)
+	def check_gs(self):
+		dir_array = np.asarray([self.list[i].dir for i in range(self.totEl)])
+		return np.sum(np.equal(self.ref_gs, dir_array))
+	
 	#Filling the array with the initial state ('2' is the default status)
+	#Moreover, the reference ground state for "ref_gs" is also generated
 	def fill_array(self):
-		if (not (self.input_boundary == 'pbc')) or ((self.input_rows%2) == 0 and (self.input_cols%2) == 0):
+		if self.input_init == 'r':
+			rand_gen = np.random.randint(2, size=self.totEl)
+			for i in range(self.totEl):
+				self.list[i].dir = rand_gen[i]
+		elif (not (self.input_boundary == 'pbc')) or ((self.input_rows%2) == 0 and (self.input_cols%2) == 0):
 			if self.input_init == '1':
 				for i in range(self.totEl):
 					if (self.list[i].address[0]%4) == 0:
@@ -439,11 +456,26 @@ class Array:
 				for i in range(0, 2*self.input_rows+1, 2): #VERTICAL islands; see "generate_array" method
 					for j in range(round(self.input_cols/2)):
 						self.list[self.get_address_linear([i, j])].dir = 0
-		if self.input_init == 'r':
-			rand_gen = np.random.randint(2, size=self.totEl)
-			for i in range(self.totEl):
-				self.list[i].dir = rand_gen[i]
-
+		else:
+			raise RuntimeError('Initial condition not compatible with the array. Check the number of vertices.')
+		
+		#Here, the reference ground state (T1 tiling) is generated
+		for i in range(self.totEl):
+			if (self.list[i].address[0]%4) == 0:
+				if (self.list[i].address[1]%2) != 0:
+					self.ref_gs[i] = 0
+			elif (self.list[i].address[0]%2) == 0:
+				if (self.list[i].address[1]%2) == 0:
+					self.ref_gs[i] = 0
+			else:
+				if ((self.list[i].address[0]-1)%4) == 0:
+					if (self.list[i].address[1]%2) == 0:
+						self.ref_gs[i] = 0
+				elif ((self.list[i].address[0]-1)%2) == 0:
+					if (self.list[i].address[1]%2) != 0:
+						self.ref_gs[i] = 0
+		self.param_gs[0] = self.check_gs()
+	
 	#Count the vertices and initialize the map - initialize list_freq and list_partialSum - calculate the initial magnetization
 	def identify_array(self):
 		#Count the vertices and initialize the map
@@ -485,10 +517,14 @@ class Array:
 			island_to_flip = self.get_event_index(rand_island[i])
 			#Update evo and map
 			self.update_evo(i, island_to_flip)
-			#Flip the island in list and update m
+			#Flip the island in list; update m and param_gs
 			self.m[i+1] = self.m[i] - (2*self.list[island_to_flip].dir - 1)
-			self.list[island_to_flip].dir = abs(self.list[island_to_flip].dir - 1) #flip the island
+			self.list[island_to_flip].dir = abs(self.list[island_to_flip].dir - 1) #<---------- FLIP the island
 			self.m[i+1] += 2*self.list[island_to_flip].dir - 1
+			if self.list[island_to_flip].dir == self.ref_gs[island_to_flip]:
+				self.param_gs[i+1] = self.param_gs[i] + 1
+			else:
+				self.param_gs[i+1] = self.param_gs[i] - 1
 			#Update t - TO BE DONE BEFORE UPDATING list_partialSum
 			self.t[i+1] = self.t[i] - np.log(rand_time[i])/self.list_partialSum[-1]
 			#Update list_freq
@@ -511,6 +547,7 @@ class Array:
 		self.evolution /= self.input_rows*self.input_cols
 		self.evolution_T1 /= self.input_rows*self.input_cols
 		self.m /= self.totEl
+		self.param_gs /= self.totEl
 
 #-------------------- SAVE Functions --------------------
 
@@ -524,6 +561,7 @@ def save_evolution(f, obj):
 	dset_evo.attrs['input_double'] = obj.input_double
 	dset_evo.attrs['input_single'] = obj.input_single
 	dset_evo.attrs['dim'] = (obj.input_rows, obj.input_cols)
+	dset_evo.attrs['totEl'] = obj.totEl
 	dset_evo.attrs['init'] = obj.input_init
 	dset_evo.attrs['boundary'] = obj.input_boundary
 	dset_evo.attrs['kmcSteps'] = obj.input_kmcSteps
@@ -537,6 +575,9 @@ def save_evolution(f, obj):
 	
 	dset_m_name = 'run{:d}/m'.format(obj.input_run)
 	dset_m = f.create_dataset(dset_m_name, data=obj.m)
+	
+	dset_paramGS_name = 'run{:d}/param_gs'.format(obj.input_run)
+	dset_paramGS = f.create_dataset(dset_paramGS_name, data=obj.param_gs)
 	
 	dset_evoT1_name = 'run{:d}/evo_T1'.format(obj.input_run)
 	dset_evoT1 = f.create_dataset(dset_evoT1_name, data=obj.evolution_T1)
@@ -591,16 +632,19 @@ def avg_runs(f):
 	evolution_avg = np.zeros((kmcSteps+1, 16), dtype=np.float_)
 	evolutionT1_avg = np.zeros((kmcSteps+1, 2), dtype=np.float_)
 	m_avg = np.zeros(kmcSteps+1, dtype=np.float_)
+	paramGS_avg = np.zeros(kmcSteps+1, dtype=np.float_)
 	for run in range(num_runs):
 		evolution_run = f['run{:d}/evo'.format(run)].value
 		evolutionT1_run = f['run{:d}/evo_T1'.format(run)].value
 		t_run = f['run{:d}/t'.format(run)].value
 		m_run = f['run{:d}/m'.format(run)].value
+		paramGS_run = f['run{:d}/param_gs'.format(run)].value
 		for i in range(16):
 			evolution_avg[:, i] += np.interp(t_avg, t_run, evolution_run[:, i])
 		for i in range(2):
 			evolutionT1_avg[:, i] += np.interp(t_avg, t_run, evolutionT1_run[:, i])
 		m_avg += m_run
+		paramGS_avg += paramGS_run
 	
 	#Save the avg run in the same HDF5 file
 	dset_evo_avg = f.create_dataset('avg/evo', data=evolution_avg/num_runs)
@@ -608,6 +652,7 @@ def avg_runs(f):
 	dset_evo_avg.attrs['input_single'] = f['run0/evo'].attrs['input_single']
 	dset_evo_avg.attrs['boundary'] = f['run0/evo'].attrs['boundary']
 	dset_evo_avg.attrs['dim'] = f['run0/evo'].attrs['dim']
+	dset_evo_avg.attrs['totEl'] = f['run0/evo'].attrs['totEl']
 	dset_evo_avg.attrs['init'] = f['run0/evo'].attrs['init']
 	dset_evo_avg.attrs['attempt_freq'] = f['run0/evo'].attrs['attempt_freq']
 	dset_evo_avg.attrs['disorder'] = f['run0/evo'].attrs['disorder']
@@ -616,6 +661,7 @@ def avg_runs(f):
 	dset_evo_avg.attrs['runs_for_avg'] = num_runs
 	dset_t_avg = f.create_dataset('avg/t', data=t_avg)
 	dset_m_avg = f.create_dataset('avg/m', data=m_avg/num_runs)
+	dset_paramGS_avg = f.create_dataset('avg/param_gs', data=paramGS_avg/num_runs)
 	dset_evoT1_avg = f.create_dataset('avg/evo_T1', data=evolutionT1_avg/num_runs)
 	dset_doubleFreq_avg = f.create_dataset('avg/f_double', data=f['run0/f_double'].value)
 	dset_doubleFreq_avg.attrs['input_double'] = f['run0/f_double'].attrs['input_double']
@@ -642,6 +688,7 @@ def merge_runs(f):
 	evolutionT1_merged = np.zeros((kmcSteps_tot+1, 2), dtype=np.float_)
 	t_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
 	m_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
+	paramGS_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
 	doubleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
 	singleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
 	nrc_merged = np.zeros((kmcSteps_tot, 3), dtype=np.int_)
@@ -650,13 +697,16 @@ def merge_runs(f):
 	evolutionT1_run = f['run0/evo_T1'].value
 	t_run = f['run0/t'].value
 	m_run = f['run0/m'].value
+	paramGS_run = f['run0/param_gs'].value
 	doubleTrans_run = f['run0/trans_double'].value
 	singleTrans_run = f['run0/trans_single'].value
 	nrc_run = f['run0/nrc'].value
+	
 	evolution_merged[0:kmcSteps[0]+1, :] = evolution_run
 	evolutionT1_merged[0:kmcSteps[0]+1, :] = evolutionT1_run
 	t_merged[0:kmcSteps[0]+1] = t_run
 	m_merged[0:kmcSteps[0]+1] = m_run
+	paramGS_merged[0:kmcSteps[0]+1] = paramGS_run
 	doubleTrans_merged[0:kmcSteps[0]] = doubleTrans_run
 	singleTrans_merged[0:kmcSteps[0]] = singleTrans_run
 	nrc_merged[0:kmcSteps[0]] = nrc_run
@@ -668,13 +718,16 @@ def merge_runs(f):
 		evolutionT1_run = f['run{:d}/evo_T1'.format(run+1)].value
 		t_run = f['run{:d}/t'.format(run+1)].value
 		m_run = f['run{:d}/m'.format(run+1)].value
+		paramGS_run = f['run{:d}/param_gs'.format(run+1)].value
 		doubleTrans_run = f['run{:d}/trans_double'.format(run+1)].value
 		singleTrans_run = f['run{:d}/trans_single'.format(run+1)].value
 		nrc_run = f['run{:d}/nrc'.format(run+1)].value
+		
 		evolution_merged[start_index:stop_index, :] = evolution_run[1:, :]
 		evolutionT1_merged[start_index:stop_index, :] = evolutionT1_run[1:, :]
 		t_merged[start_index:stop_index] = t_run[1:]
 		m_merged[start_index:stop_index] = m_run[1:]
+		paramGS_merged[start_index:stop_index] = paramGS_run[1:]
 		doubleTrans_merged[start_index-1:stop_index-1] = doubleTrans_run
 		singleTrans_merged[start_index-1:stop_index-1] = singleTrans_run
 		nrc_merged[start_index-1:stop_index-1] = nrc_run
@@ -684,6 +737,7 @@ def merge_runs(f):
 	dset_evo_merged = f.create_dataset('merged/evo', data=evolution_merged)
 	dset_evo_merged.attrs['boundary'] = f['run0/evo'].attrs['boundary']
 	dset_evo_merged.attrs['dim'] = f['run0/evo'].attrs['dim']
+	dset_evo_merged.attrs['totEl'] = f['run0/evo'].attrs['totEl']
 	dset_evo_merged.attrs['init'] = f['run0/evo'].attrs['init']
 	dset_evo_merged.attrs['attempt_freq'] = f['run0/evo'].attrs['attempt_freq']
 	dset_evo_merged.attrs['disorder'] = f['run0/evo'].attrs['disorder']
@@ -692,6 +746,7 @@ def merge_runs(f):
 	dset_evo_merged.attrs['merged_runs'] = num_runs
 	dset_t_merged = f.create_dataset('merged/t', data=t_merged)
 	dset_m_merged = f.create_dataset('merged/m', data=m_merged)
+	dset_paramGS_merged = f.create_dataset('merged/param_gs', data=paramGS_merged)
 	dset_evoT1_merged = f.create_dataset('merged/evo_T1', data=evolutionT1_merged)
 	dset_doubleTrans_merged = f.create_dataset('merged/trans_double', data=doubleTrans_merged)
 	dset_singleTrans_merged = f.create_dataset('merged/trans_single', data=singleTrans_merged)
@@ -1386,6 +1441,84 @@ def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 		print('Exported TXT file')
 	
 	return ax
+	
+#Plot the magn. evolution (given the run)
+def plot_op(input_name, run, type='1', save_op=False, image_flag=False, file_flag=True):
+	"""Plot the order parameter evolution (given the run).
+	The "type" argument specifies what to plot:
+	 1 - two curves, one for each T1 phase (o.p. and 1-o.p.)
+	 o - antiferromagnetic order parameter (2*o.p.-1)
+	The base order parameter (type='1') can be saved in a TXT file.
+	"""
+	
+	if file_flag:
+		f = h5py.File(input_name, 'r')
+	else:
+		f = input_name
+	if run == -1:
+		dset_evo_name = 'avg/evo'
+		dset_paramGS_name = 'avg/param_gs'
+		dset_t_name = 'avg/t'
+		multipleRuns = f[dset_evo_name].attrs['runs_for_avg']
+	elif run == -2:
+		dset_evo_name = 'merged/evo'
+		dset_paramGS_name = 'merged/param_gs'
+		dset_t_name = 'merged/t'
+		multipleRuns = f[dset_evo_name].attrs['merged_runs']
+	else:
+		dset_evo_name = 'run{:d}/evo'.format(run)
+		dset_paramGS_name = 'run{:d}/param_gs'.format(run)
+		dset_t_name = 'run{:d}/t'.format(run)
+	#param_gs = f[dset_paramGS_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	param_gs = f[dset_paramGS_name].value
+	t = f[dset_t_name].value
+	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
+	rows, cols = f[dset_evo_name].attrs['dim']
+	if image_flag and run >= 0:
+		images_num = f[dset_evo_name].attrs['images']
+		x_coord = np.zeros(images_num-1, dtype=np.float_)
+		for i in range(images_num-1):
+			x_coord[i] = f['run{:d}/images/img{:d}'.format(run, i+1)].attrs['t']
+	if file_flag:
+		f.close()
+	
+	fig = plt.figure(figsize=figsize_single)
+	ax = fig.add_subplot(1,1,1)
+	if type == '1':
+		ax.semilogx(t[1:], param_gs[1:], '-', color=myG, linewidth=2, label='G.S. T1-p0') #initial value skipped because of LOG plot (t=0 is not drawable)
+		ax.semilogx(t[1:], 1.-param_gs[1:], '-', color=myM, linewidth=2, label='G.S. T1-p1') #initial value skipped because of LOG plot (t=0 is not drawable)
+		ax.set_ylim([-0.05, 1.05])
+	elif type == 'o':
+		ax.semilogx(t[1:], 2*param_gs[1:]-1., '-', color=myB, linewidth=2, label='AF order param.') #initial value skipped because of LOG plot (t=0 is not drawable)
+		ax.set_ylim([-1.05, 1.05])
+		ax.axhline(0, color='k')
+	else:
+		raise RuntimeError('Type not available.')
+	if run == -1 or run == -2:
+		ax.set_title('{:d} x {:d} Vertices - {:d} Runs considered - {:.1f} KMC Steps'.format(rows, cols, multipleRuns, kmcSteps))
+	else:
+		ax.set_title('{:d} x {:d} Vertices - Run {:d} - {:.1f} KMC Steps'.format(rows, cols, run, kmcSteps))
+	ax.set_xlabel('t (s)')
+	ax.set_ylabel('Specified order parameter')
+	if image_flag and run != -1:
+		for i in range(images_num-1):
+			ax.axvline(x_coord[i], color='k')
+	ax.grid(True)
+	ax.legend(loc='best')
+	plt.show()
+	
+	if save_op:
+		ext_position = 1 + input_name[::-1].find('.')
+		out_name = input_name[:-ext_position] + '_paramGS_run{:d}.txt'.format(run)
+		
+		data_to_save = np.zeros((kmcSteps+1, 2), dtype=np.float_)
+		data_to_save[:, 0] = t
+		data_to_save[:, 1] = param_gs
+		np.savetxt(out_name, data_to_save, fmt='%.8e', delimiter='\t')
+		print('Exported TXT file')
+	
+	return ax
 
 #Fit of the magnetization evolution (given the run)
 def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
@@ -1637,13 +1770,16 @@ def kmc_simulation(config_file, create_mode='a', verbose=False):
 		if p[0] == 'r':
 			run_offset += 1
 	
-	for i in range(num_runs):
-		print('----- RUN {:d} -----'.format(i))
-		arrayObj = Array(control_list, (prob_double, prob_single))
-		arrayObj.run(run_offset + i, verbose)
-		save_evolution(output_file, arrayObj)
-	avg_runs(output_file)
-	
+	try:
+		for i in range(num_runs):
+			print('----- RUN {:d} -----'.format(i))
+			arrayObj = Array(control_list, (prob_double, prob_single))
+			arrayObj.run(run_offset + i, verbose)
+			save_evolution(output_file, arrayObj)
+		avg_runs(output_file)
+	except Exception as e:
+		print(e)
+		print('\nRe-run the simulation, since some errors occurred...')
 	output_file.close()
 	
 	stop_time = perf_counter()

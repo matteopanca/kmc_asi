@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='kMC-ASI',
-      version='1.2',
+      version='1.3',
       author='Matteo Pancaldi',
       author_email='mpancaldi.physics@gmail.com',
       url='https://github.com/matteopanca/kmc_asi',
