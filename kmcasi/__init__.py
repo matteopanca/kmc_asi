@@ -573,35 +573,45 @@ def save_evolution(f, obj):
 	dset_evo.attrs['images'] = obj.input_images
 	dset_evo.attrs['attempt_freq'] = obj.input_attemptFreq
 	dset_evo.attrs['disorder'] = obj.input_disorderStDev
+	dset_evo.attrs['description'] = 'Time evolution of the 16 single-vertex configs., as defined by the column index.'
 	
 	dset_t_name = 'run{:d}/t'.format(obj.input_run)
 	dset_t = f.create_dataset(dset_t_name, data=obj.t)
+	dset_t.attrs['description'] = 'Calculated time associated with each kMC step.'
 	
 	dset_m_name = 'run{:d}/m'.format(obj.input_run)
 	dset_m = f.create_dataset(dset_m_name, data=obj.m)
+	dset_m.attrs['description'] = 'Time evolution of the normalized magn. along the [11] direction.'
 	
 	dset_paramGS_name = 'run{:d}/param_gs'.format(obj.input_run)
 	dset_paramGS = f.create_dataset(dset_paramGS_name, data=obj.param_gs)
+	dset_paramGS.attrs['description'] = 'Time evolution of the af order parameter, which corresponds to (2*param_gs-1).'
 	
 	dset_evoT1_name = 'run{:d}/evo_T1'.format(obj.input_run)
 	dset_evoT1 = f.create_dataset(dset_evoT1_name, data=obj.evolution_T1)
+	dset_evoT1.attrs['description'] = 'Time evolution of the two T1 phases. 1-(colA+colB) gives what is not T1.'
 	
 	dset_doubleFreq_name = 'run{:d}/f_double'.format(obj.input_run)
 	dset_doubleFreq = f.create_dataset(dset_doubleFreq_name, data=obj.freq_double)
 	dset_doubleFreq.attrs['input_double'] = obj.input_double
 	dset_doubleFreq.attrs['attempt_freq'] = obj.input_attemptFreq[0]
+	dset_doubleFreq.attrs['description'] = 'The 64x2 considered frequencies corresponding to the input file multiplied by the attempt frequency.'
 	
 	dset_singleFreq_name = 'run{:d}/f_single'.format(obj.input_run)
 	dset_singleFreq = f.create_dataset(dset_singleFreq_name, data=obj.freq_single)
 	dset_singleFreq.attrs['input_single'] = obj.input_single
 	dset_singleFreq.attrs['attempt_freq'] = obj.input_attemptFreq[1]
+	dset_singleFreq.attrs['description'] = 'The 8x2 considered frequencies corresponding to the input file multiplied by the attempt frequency.'
 	
 	dset_doubleTrans_name = 'run{:d}/trans_double'.format(obj.input_run)
 	dset_doubleTrans = f.create_dataset(dset_doubleTrans_name, data=obj.trans_double)
+	dset_doubleTrans.attrs['description'] = 'Time evolution of the transition types for the 10 double-vertex configs. A value of -1 means no transition between double-vertex configs. occurred.'
 	dset_singleTrans_name = 'run{:d}/trans_single'.format(obj.input_run)
 	dset_singleTrans = f.create_dataset(dset_singleTrans_name, data=obj.trans_single)
+	dset_singleTrans.attrs['description'] = 'Time evolution of the transition types for the 4 single-vertex configs. A value of -1 means no transition between single-vertex configs. occurred.'
 	dset_nrc_name = 'run{:d}/nrc'.format(obj.input_run)
 	dset_nrc = f.create_dataset(dset_nrc_name, data=obj.nrc)
+	dset_nrc.attrs['description'] = 'Num. of neighbours (6 or 3) - Line and column of the corresponding input file (rates) for identifying the trasition - X coord. and Y coord. of the involved island, according to KMC_Schemes.pdf.'
 	
 	for i in range(obj.input_images):
 		dset_image_name = 'run{:d}/images/img{:d}'.format(obj.input_run, i)
@@ -660,19 +670,33 @@ def avg_runs(f):
 	dset_evo_avg.attrs['init'] = f['run0/evo'].attrs['init']
 	dset_evo_avg.attrs['attempt_freq'] = f['run0/evo'].attrs['attempt_freq']
 	dset_evo_avg.attrs['disorder'] = f['run0/evo'].attrs['disorder']
+	dset_evo_avg.attrs['description'] = f['run0/evo'].attrs['description']
 	dset_evo_avg.attrs['kmcSteps'] = kmcSteps
 	dset_evo_avg.attrs['timeLimit'] = t_avg[-1]
 	dset_evo_avg.attrs['runs_for_avg'] = num_runs
+	
 	dset_t_avg = f.create_dataset('avg/t', data=t_avg)
+	dset_t_avg.attrs['description'] = f['run0/t'].attrs['description']
+	
 	dset_m_avg = f.create_dataset('avg/m', data=m_avg/num_runs)
+	dset_m_avg.attrs['description'] = f['run0/m'].attrs['description']
+	
 	dset_paramGS_avg = f.create_dataset('avg/param_gs', data=paramGS_avg/num_runs)
+	dset_paramGS_avg.attrs['description'] = f['run0/param_gs'].attrs['description']
+	
 	dset_evoT1_avg = f.create_dataset('avg/evo_T1', data=evolutionT1_avg/num_runs)
+	dset_evoT1_avg.attrs['description'] = f['run0/evo_T1'].attrs['description']
+	
 	dset_doubleFreq_avg = f.create_dataset('avg/f_double', data=f['run0/f_double'].value)
 	dset_doubleFreq_avg.attrs['input_double'] = f['run0/f_double'].attrs['input_double']
 	dset_doubleFreq_avg.attrs['attempt_freq'] = f['run0/f_double'].attrs['attempt_freq']
+	dset_doubleFreq_avg.attrs['description'] = f['run0/f_double'].attrs['description']
+	
 	dset_singleFreq_avg = f.create_dataset('avg/f_single', data=f['run0/f_single'].value)
 	dset_singleFreq_avg.attrs['input_single'] = f['run0/f_single'].attrs['input_single']
 	dset_singleFreq_avg.attrs['attempt_freq'] = f['run0/f_single'].attrs['attempt_freq']
+	dset_singleFreq_avg.attrs['description'] = f['run0/f_single'].attrs['description']
+	
 	print('AVG group created ({:d} runs)'.format(num_runs))
 
 #Merge ALL the runs in a given HDF5 file
@@ -745,16 +769,32 @@ def merge_runs(f):
 	dset_evo_merged.attrs['init'] = f['run0/evo'].attrs['init']
 	dset_evo_merged.attrs['attempt_freq'] = f['run0/evo'].attrs['attempt_freq']
 	dset_evo_merged.attrs['disorder'] = f['run0/evo'].attrs['disorder']
+	dset_evo_merged.attrs['description'] = f['run0/evo'].attrs['description']
 	dset_evo_merged.attrs['kmcSteps'] = kmcSteps_tot
 	dset_evo_merged.attrs['timeLimit'] = t_merged[-1]
 	dset_evo_merged.attrs['merged_runs'] = num_runs
+	
 	dset_t_merged = f.create_dataset('merged/t', data=t_merged)
+	dset_t_merged.attrs['description'] = f['run0/t'].attrs['description']
+	
 	dset_m_merged = f.create_dataset('merged/m', data=m_merged)
+	dset_m_merged.attrs['description'] = f['run0/m'].attrs['description']
+	
 	dset_paramGS_merged = f.create_dataset('merged/param_gs', data=paramGS_merged)
+	dset_paramGS_merged.attrs['description'] = f['run0/param_gs'].attrs['description']
+	
 	dset_evoT1_merged = f.create_dataset('merged/evo_T1', data=evolutionT1_merged)
+	dset_evoT1_merged.attrs['description'] = f['run0/evo_T1'].attrs['description']
+	
 	dset_doubleTrans_merged = f.create_dataset('merged/trans_double', data=doubleTrans_merged)
+	dset_doubleTrans_merged.attrs['description'] = f['run0/trans_double'].attrs['description']
+	
 	dset_singleTrans_merged = f.create_dataset('merged/trans_single', data=singleTrans_merged)
+	dset_singleTrans_merged.attrs['description'] = f['run0/trans_single'].attrs['description']
+	
 	dset_nrc_merged = f.create_dataset('merged/nrc', data=nrc_merged)
+	dset_nrc_merged.attrs['description'] = f['run0/nrc'].attrs['description']
+	
 	print('MERGED group created ({:d} runs)'.format(num_runs))
 
 #4-vertex equilibrium state (time-weighted states) - It considers only t >= start_time
