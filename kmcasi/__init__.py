@@ -16,6 +16,8 @@
 #Added "nrc" evolution as dataset (V1.2)
 #From 05/01/2020 on --->
 #Added "param_gs" evolution as dataset, as suggested by Naemi Leo (V1.3)
+#From 02/03/2020 on --->
+#Updated "nrc" with island's coordinates, as suggested by Naemi Leo (V1.4)
 #-----------------------------------------------
 
 import numpy as np
@@ -123,7 +125,7 @@ class Array:
 		
 		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
 		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
-		self.nrc = np.zeros((self.input_kmcSteps, 3), dtype=np.int_) #index, [neighbours, row, column]
+		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=np.int_) #index, [neighbours, row, column, x_coord, y_coord]
 		
 		#Methods for initializing the array
 		self.generate_array()
@@ -166,7 +168,7 @@ class Array:
 		
 		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
 		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
-		self.nrc = np.zeros((self.input_kmcSteps, 3), dtype=np.int_) #index, [neighbours, row, column]
+		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=np.int_) #index, [neighbours, row, column, x_coord, y_coord]
 		
 		#Initialize the "new" evolution
 		self.evolution[0, :] = old_obj.evolution[-1, :]*self.input_rows*self.input_cols
@@ -534,6 +536,8 @@ class Array:
 			self.nrc[i, 0] = nrc[0] #Chosen row/column in the proper prob. table
 			self.nrc[i, 1] = nrc[1] #Chosen row/column in the proper prob. table
 			self.nrc[i, 2] = abs(nrc[2] - 1) #Chosen row/column in the proper prob. table (the step before)
+			self.nrc[i, 3] = self.list[island_to_flip].address[0] #Coords. of the chosen island
+			self.nrc[i, 4] = self.list[island_to_flip].address[1] #Coords. of the chosen island
 			#Update list_partialSum
 			self.list_partialSum[0] = self.list_freq[0]
 			for j in range(self.totEl-1):
@@ -691,7 +695,7 @@ def merge_runs(f):
 	paramGS_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
 	doubleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
 	singleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
-	nrc_merged = np.zeros((kmcSteps_tot, 3), dtype=np.int_)
+	nrc_merged = np.zeros((kmcSteps_tot, 5), dtype=np.int_)
 	
 	evolution_run = f['run0/evo'].value
 	evolutionT1_run = f['run0/evo_T1'].value
