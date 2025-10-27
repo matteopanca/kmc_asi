@@ -630,16 +630,16 @@ def avg_runs(f):
 		print('AVG group deleted')
 	num_runs = len(f.keys())
 	#Get the minimum (first) end time and the corresponding run
-	t_min = f['run0/t'].value[-1]
+	t_min = f['run0/t'][-1]
 	run_min = 0
 	for run in range(num_runs):
 		dset_t_name = 'run{:d}/t'.format(run)
-		t_value = f[dset_t_name].value[-1]
+		t_value = f[dset_t_name][-1]
 		if t_value < t_min:
 			t_min = t_value
 			run_min = run
 	dset_t_name = 'run{:d}/t'.format(run_min)
-	t_avg = f[dset_t_name].value #The time trace corresponding to the (first) minimum end time
+	t_avg = f[dset_t_name][()] #The time trace corresponding to the (first) minimum end time
 	
 	#Interpolating and averaging
 	kmcSteps = f['run0/evo'].attrs['kmcSteps']
@@ -648,11 +648,11 @@ def avg_runs(f):
 	m_avg = np.zeros(kmcSteps+1, dtype=np.float_)
 	paramGS_avg = np.zeros(kmcSteps+1, dtype=np.float_)
 	for run in range(num_runs):
-		evolution_run = f['run{:d}/evo'.format(run)].value
-		evolutionT1_run = f['run{:d}/evo_T1'.format(run)].value
-		t_run = f['run{:d}/t'.format(run)].value
-		m_run = f['run{:d}/m'.format(run)].value
-		paramGS_run = f['run{:d}/param_gs'.format(run)].value
+		evolution_run = f['run{:d}/evo'.format(run)][()]
+		evolutionT1_run = f['run{:d}/evo_T1'.format(run)][()]
+		t_run = f['run{:d}/t'.format(run)][()]
+		m_run = f['run{:d}/m'.format(run)][()]
+		paramGS_run = f['run{:d}/param_gs'.format(run)][()]
 		for i in range(16):
 			evolution_avg[:, i] += np.interp(t_avg, t_run, evolution_run[:, i])
 		for i in range(2):
@@ -687,12 +687,12 @@ def avg_runs(f):
 	dset_evoT1_avg = f.create_dataset('avg/evo_T1', data=evolutionT1_avg/num_runs)
 	dset_evoT1_avg.attrs['description'] = f['run0/evo_T1'].attrs['description']
 	
-	dset_doubleFreq_avg = f.create_dataset('avg/f_double', data=f['run0/f_double'].value)
+	dset_doubleFreq_avg = f.create_dataset('avg/f_double', data=f['run0/f_double'][()])
 	dset_doubleFreq_avg.attrs['input_double'] = f['run0/f_double'].attrs['input_double']
 	dset_doubleFreq_avg.attrs['attempt_freq'] = f['run0/f_double'].attrs['attempt_freq']
 	dset_doubleFreq_avg.attrs['description'] = f['run0/f_double'].attrs['description']
 	
-	dset_singleFreq_avg = f.create_dataset('avg/f_single', data=f['run0/f_single'].value)
+	dset_singleFreq_avg = f.create_dataset('avg/f_single', data=f['run0/f_single'][()])
 	dset_singleFreq_avg.attrs['input_single'] = f['run0/f_single'].attrs['input_single']
 	dset_singleFreq_avg.attrs['attempt_freq'] = f['run0/f_single'].attrs['attempt_freq']
 	dset_singleFreq_avg.attrs['description'] = f['run0/f_single'].attrs['description']
@@ -721,14 +721,14 @@ def merge_runs(f):
 	singleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
 	nrc_merged = np.zeros((kmcSteps_tot, 5), dtype=np.int_)
 	
-	evolution_run = f['run0/evo'].value
-	evolutionT1_run = f['run0/evo_T1'].value
-	t_run = f['run0/t'].value
-	m_run = f['run0/m'].value
-	paramGS_run = f['run0/param_gs'].value
-	doubleTrans_run = f['run0/trans_double'].value
-	singleTrans_run = f['run0/trans_single'].value
-	nrc_run = f['run0/nrc'].value
+	evolution_run = f['run0/evo'][()]
+	evolutionT1_run = f['run0/evo_T1'][()]
+	t_run = f['run0/t'][()]
+	m_run = f['run0/m'][()]
+	paramGS_run = f['run0/param_gs'][()]
+	doubleTrans_run = f['run0/trans_double'][()]
+	singleTrans_run = f['run0/trans_single'][()]
+	nrc_run = f['run0/nrc'][()]
 	
 	evolution_merged[0:kmcSteps[0]+1, :] = evolution_run
 	evolutionT1_merged[0:kmcSteps[0]+1, :] = evolutionT1_run
@@ -742,14 +742,14 @@ def merge_runs(f):
 	start_index = kmcSteps[0] + 1
 	for run in range(num_runs-1):
 		stop_index = start_index + kmcSteps[run+1]
-		evolution_run = f['run{:d}/evo'.format(run+1)].value
-		evolutionT1_run = f['run{:d}/evo_T1'.format(run+1)].value
-		t_run = f['run{:d}/t'.format(run+1)].value
-		m_run = f['run{:d}/m'.format(run+1)].value
-		paramGS_run = f['run{:d}/param_gs'.format(run+1)].value
-		doubleTrans_run = f['run{:d}/trans_double'.format(run+1)].value
-		singleTrans_run = f['run{:d}/trans_single'.format(run+1)].value
-		nrc_run = f['run{:d}/nrc'.format(run+1)].value
+		evolution_run = f['run{:d}/evo'.format(run+1)][()]
+		evolutionT1_run = f['run{:d}/evo_T1'.format(run+1)][()]
+		t_run = f['run{:d}/t'.format(run+1)][()]
+		m_run = f['run{:d}/m'.format(run+1)][()]
+		paramGS_run = f['run{:d}/param_gs'.format(run+1)][()]
+		doubleTrans_run = f['run{:d}/trans_double'.format(run+1)][()]
+		singleTrans_run = f['run{:d}/trans_single'.format(run+1)][()]
+		nrc_run = f['run{:d}/nrc'.format(run+1)][()]
 		
 		evolution_merged[start_index:stop_index, :] = evolution_run[1:, :]
 		evolutionT1_merged[start_index:stop_index, :] = evolutionT1_run[1:, :]
@@ -811,8 +811,8 @@ def calc_eq(input_name, start_time, file_flag=True):
 	num_runs = len(f.keys()) - 1
 	eq_pop = np.zeros(16, dtype=np.float_)
 	for run in range(num_runs):
-		evo_run = f['run{:d}/evo'.format(run)].value
-		t_run = f['run{:d}/t'.format(run)].value
+		evo_run = f['run{:d}/evo'.format(run)][()]
+		t_run = f['run{:d}/t'.format(run)][()]
 		bool_range = t_run >= start_time
 		t_deltas = np.diff(t_run[bool_range])
 		t_sum = np.sum(t_deltas)
@@ -869,9 +869,9 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 		dset_doubleTrans_name = 'run{:d}/trans_double'.format(run)
 		dset_singleTrans_name = 'run{:d}/trans_single'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	t = f[dset_t_name].value[1:]
-	list_doubleTrans = f[dset_doubleTrans_name].value
-	list_singleTrans = f[dset_singleTrans_name].value
+	t = f[dset_t_name][1:]
+	list_doubleTrans = f[dset_doubleTrans_name][()]
+	list_singleTrans = f[dset_singleTrans_name][()]
 	if file_flag:
 		f.close()
 	
@@ -971,7 +971,7 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 	if image == -1:
 		image = len(f['run{:d}/images'.format(run)]) - 1
 	dset_name = 'run{:d}/images/img{:d}'.format(run, image)
-	map = f[dset_name].value
+	map = f[dset_name][()]
 	t = f[dset_name].attrs['t']
 	step = f[dset_name].attrs['step']
 	if file_flag:
@@ -1050,10 +1050,10 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	else:
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	#evo = f[dset_evo_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
-	#t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	evo = f[dset_evo_name].value
-	t = f[dset_t_name].value
+	#evo = f[dset_evo_name][1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#t = f[dset_t_name][1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	evo = f[dset_evo_name][()]
+	t = f[dset_t_name][()]
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -1123,12 +1123,12 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_evoT1_name = 'run{:d}/evo_T1'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	#evo = f[dset_evo_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
-	#evo_T1 = f[dset_evoT1_name].value[1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
-	#t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	evo = f[dset_evo_name].value
-	evo_T1 = f[dset_evoT1_name].value
-	t = f[dset_t_name].value
+	#evo = f[dset_evo_name][1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#evo_T1 = f[dset_evoT1_name][1:, :] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#t = f[dset_t_name][1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	evo = f[dset_evo_name][()]
+	evo_T1 = f[dset_evoT1_name][()]
+	t = f[dset_t_name][()]
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -1183,9 +1183,9 @@ def plot_meq_sva(input_name, run, ax='', file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_singleFreq_name = 'run{:d}/f_single'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	evo = f[dset_evo_name].value
-	singleFreq = f[dset_singleFreq_name].value
-	t = f[dset_t_name].value
+	evo = f[dset_evo_name][()]
+	singleFreq = f[dset_singleFreq_name][()]
+	t = f[dset_t_name][()]
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	if file_flag:
 		f.close()
@@ -1264,9 +1264,9 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_doubleFreq_name = 'run{:d}/f_double'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	evo = f[dset_evo_name].value
-	doubleFreq = f[dset_doubleFreq_name].value
-	t = f[dset_t_name].value
+	evo = f[dset_evo_name][()]
+	doubleFreq = f[dset_doubleFreq_name][()]
+	t = f[dset_t_name][()]
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	if file_flag:
 		f.close()
@@ -1401,8 +1401,8 @@ def plot_m_all(input_name, file_flag=True):
 	for run in range(num_runs):
 		dset_m_name = 'run{:d}/m'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-		m = f[dset_m_name].value
-		t = f[dset_t_name].value
+		m = f[dset_m_name][()]
+		t = f[dset_t_name][()]
 		ax.semilogx(t[1:], m[1:], '-', color=my_color(run), linewidth=2, label='Run {:d}'.format(run)) #initial value skipped because of LOG plot (t=0 is not drawable)
 		list_max.append(m.max())
 		list_min.append(m.min())
@@ -1442,10 +1442,10 @@ def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_m_name = 'run{:d}/m'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	#m = f[dset_m_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	#t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	m = f[dset_m_name].value
-	t = f[dset_t_name].value
+	#m = f[dset_m_name][1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#t = f[dset_t_name][1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	m = f[dset_m_name][()]
+	t = f[dset_t_name][()]
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -1513,10 +1513,10 @@ def plot_op(input_name, run, type='1', save_op=False, image_flag=False, file_fla
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_paramGS_name = 'run{:d}/param_gs'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	#param_gs = f[dset_paramGS_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	#t = f[dset_t_name].value[1:] #initial value skipped because of LOG plot (t=0 is not drawable)
-	param_gs = f[dset_paramGS_name].value
-	t = f[dset_t_name].value
+	#param_gs = f[dset_paramGS_name][1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	#t = f[dset_t_name][1:] #initial value skipped because of LOG plot (t=0 is not drawable)
+	param_gs = f[dset_paramGS_name][()]
+	t = f[dset_t_name][()]
 	kmcSteps = f[dset_evo_name].attrs['kmcSteps']
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
@@ -1584,8 +1584,8 @@ def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
 	else:
 		dset_m_name = 'run{:d}/m'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
-	m = f[dset_m_name].value
-	t = f[dset_t_name].value
+	m = f[dset_m_name][()]
+	t = f[dset_t_name][()]
 	if file_flag:
 		f.close()
 	
@@ -1649,7 +1649,7 @@ def time_hist(input_name, run, limits=(0, -1), num_bins=100, fit=False, file_fla
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
 	timeLimit = f[dset_evo_name].attrs['timeLimit']
-	t = f[dset_t_name].value #The whole time trace
+	t = f[dset_t_name][()] #The whole time trace
 	if file_flag:
 		f.close()
 	
@@ -1703,7 +1703,7 @@ def time_evoDt(input_name, run, file_flag=True):
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		dset_t_name = 'run{:d}/t'.format(run)
 	timeLimit = f[dset_evo_name].attrs['timeLimit']
-	t = f[dset_t_name].value #The whole time trace
+	t = f[dset_t_name][()] #The whole time trace
 	if file_flag:
 		f.close()
 	
@@ -1737,7 +1737,7 @@ def time_limit(input_name, file_flag=True):
 		kmcSteps_list[run] = f[dset_evo_name].attrs['kmcSteps']
 	print('Time Limit SUM: {:.4e} s'.format(np.sum(timeLimit_list)))
 	try:
-		dset_evo_name = 'merged/evo'.format(run)
+		dset_evo_name = 'merged/evo'
 		timeLimit_merged = f[dset_evo_name].attrs['timeLimit']
 		print('Time Limit MERGED: {:.4e} s'.format(timeLimit_merged))
 	except:
@@ -1759,7 +1759,7 @@ def time_limit(input_name, file_flag=True):
 	ax2 = fig.add_subplot(1,2,2)
 	ax2.yaxis.set_major_formatter(fmt)
 	ax2.scatter(kmcSteps_list, timeLimit_list)
-	ax2.set_title('Max Time vs KMC Steps'.format(num_runs))
+	ax2.set_title('Max Time vs KMC Steps')
 	ax2.set_xlabel('KMC Steps')
 	ax2.set_ylabel('Max Time (s)')
 	ax2.set_ylim(ax1.get_ylim())
