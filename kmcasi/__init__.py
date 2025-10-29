@@ -125,7 +125,7 @@ class Array:
 		
 		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
 		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
-		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=np.int_) #index, [neighbours, row, column, x_coord, y_coord]
+		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=np.int_) #index, [neighbours, table row, table column, row_coord, col_coord]
 		
 		#Methods for initializing the array
 		self.generate_array()
@@ -168,7 +168,7 @@ class Array:
 		
 		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
 		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
-		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=np.int_) #index, [neighbours, row, column, x_coord, y_coord]
+		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=np.int_) #index, [neighbours, table row, table column, row_coord, col_coord]
 		
 		#Initialize the "new" evolution
 		self.evolution[0, :] = old_obj.evolution[-1, :]*self.input_rows*self.input_cols
@@ -611,7 +611,7 @@ def save_evolution(f, obj):
 	dset_singleTrans.attrs['description'] = 'Time evolution of the transition types for the 4 single-vertex configs. A value of -1 means no transition between single-vertex configs. occurred.'
 	dset_nrc_name = 'run{:d}/nrc'.format(obj.input_run)
 	dset_nrc = f.create_dataset(dset_nrc_name, data=obj.nrc)
-	dset_nrc.attrs['description'] = 'Num. of neighbours (6 or 3) - Line and column of the corresponding input file (rates) for identifying the trasition - X coord. and Y coord. of the involved island, according to KMC_Schemes.pdf.'
+	dset_nrc.attrs['description'] = 'Num. of neighbours (6 or 3) - Line and column of the corresponding input file (rates) for identifying the trasition - Row coord. and column coord. of the involved island, according to KMC_Schemes.pdf.'
 	
 	for i in range(obj.input_images):
 		dset_image_name = 'run{:d}/images/img{:d}'.format(obj.input_run, i)
