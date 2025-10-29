@@ -798,15 +798,17 @@ def merge_runs(f):
 	print('MERGED group created ({:d} runs)'.format(num_runs))
 
 #4-vertex equilibrium state (time-weighted states) - It considers only t >= start_time
-def calc_eq(input_name, start_time, file_flag=True):
+def calc_eq(input_name, start_time):
 	"""4-vertex equilibrium state (time-weighted states).
 	It considers only t >= start_time.
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	
 	num_runs = len(f.keys()) - 1
 	eq_pop = np.zeros(16, dtype=np.float_)
@@ -834,7 +836,7 @@ def calc_eq(input_name, start_time, file_flag=True):
 #-------------------- DRAWING Functions --------------------
 
 #Draw a map with the transition distribution (given the run) - both double and single transitions (if any)
-def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=True):
+def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet'):
 	"""Draw a map with the transition distribution (given the run).
 	Both double-vertex and single-vertex transitions (if any) are considered.
 	
@@ -856,10 +858,12 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 	--------------
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -2:
 		dset_doubleTrans_name = 'merged/trans_double'
 		dset_singleTrans_name = 'merged/trans_single'
@@ -953,9 +957,9 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet', file_flag=T
 	return transitions_double, transitions_single
 
 #Draw colored map (given the run and the image num.)
-def draw_map(input_name, run, image, type='v', file_flag=True):
+def draw_map(input_name, run, image, my_type='v'):
 	"""Draw colored vertex map (given the run and the image number).
-	The "type" argument specifies what meaning the colours have:
+	The "my_type" argument specifies what meaning the colours have:
 	 v - 4 vertices
 	 1 - only T1 (everything else is black)
 	 2 - only T2 (everything else is black)
@@ -964,10 +968,12 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 	 p - T1 phases
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if image == -1:
 		image = len(f['run{:d}/images'.format(run)]) - 1
 	dset_name = 'run{:d}/images/img{:d}'.format(run, image)
@@ -977,18 +983,18 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 	if file_flag:
 		f.close()
 	
-	if type == 'v':
+	if my_type == 'v':
 		color_dictionary = [myY,myR,myR,myB,myR,myG,myB,myR,myR,myB,myG,myR,myB,myR,myR,myY]
 		#color_dictionary = [myY,myB,myB,myR,myB,myK,myR,myB,myB,myR,myK,myB,myR,myB,myB,myY] #PRL 111 057204 (2013)
-	elif type == '1':
+	elif my_type == '1':
 		color_dictionary = [myK,myK,myK,myK,myK,myG,myK,myK,myK,myK,myM,myK,myK,myK,myK,myK]
-	elif type == '2':
+	elif my_type == '2':
 		color_dictionary = [myK,myK,myK,myB,myK,myK,myC,myK,myK,myO,myK,myK,myGG,myK,myK,myK]
-	elif type == '3':
+	elif my_type == '3':
 		color_dictionary = [myK,myB,myR,myK,myY,myK,myK,myM,myC,myK,myK,myO,myK,myGG,myG,myK]
-	elif type == '4':
+	elif my_type == '4':
 		color_dictionary = [myY,myK,myK,myK,myK,myK,myK,myK,myK,myK,myK,myK,myK,myK,myK,myO]
-	elif type == 'p':
+	elif my_type == 'p':
 		color_dictionary = [myG,myM,myK]
 	else:
 		color_dictionary = [myY,myR,myR,myB,myR,myG,myB,myR,myR,myB,myG,myR,myB,myR,myR,myY]
@@ -1001,7 +1007,7 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 		for j in range(cols):
 			x_coord[counter] = j
 			y_coord[counter] = i
-			if type == 'p':
+			if my_type == 'p':
 				if map[i,j] == 5:
 					if ((i+j)%2) == 0:
 						color[counter] = color_dictionary[0]
@@ -1030,15 +1036,17 @@ def draw_map(input_name, run, image, type='v', file_flag=True):
 	plt.show()
 
 #Plot the 4 vertices evolution (given the run)
-def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
+def plot_evo(input_name, run, save_evo=False, image_flag=False):
 	"""Plot the 4 vertices evolution (given the run).
 	The curves can be saved in a TXT file.
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_evo_name = 'avg/evo'
 		dset_t_name = 'avg/t'
@@ -1102,13 +1110,15 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, file_flag=True):
 	return ax
 	
 #Plot the T1 phases evolution (given the run)
-def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
+def plot_evoT1(input_name, run, image_flag=False):
 	"""Plot the T1 phases evolution (given the run)."""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_evo_name = 'avg/evo'
 		dset_evoT1_name = 'avg/evo_T1'
@@ -1166,15 +1176,17 @@ def plot_evoT1(input_name, run, image_flag=False, file_flag=True):
 	plt.show()
 
 #Plot the (4 vertices) SVA MASTER EQUATION evolution given the run and (optionally) the destination axis
-def plot_meq_sva(input_name, run, ax='', file_flag=True):
+def plot_meq_sva(input_name, run, ax=''):
 	"""Plot the (4 vertices) SVA MASTER EQUATION evolution given the run
 	and (optionally) the destination axis.
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_evo_name = 'avg/evo'
 		dset_singleFreq_name = 'avg/f_single'
@@ -1247,15 +1259,17 @@ def plot_meq_sva(input_name, run, ax='', file_flag=True):
 	return y0_4
 
 #Plot the 4 vertices MASTER EQUATION evolution given the run and (optionally) the axis (Simple DVA M. Eq.)
-def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
+def plot_meq_dva(input_name, run, ax='', noT1=(False, '')):
 	"""Plot the 4 vertices MASTER EQUATION evolution given the run
 	and (optionally) the axis (Simple DVA M. Eq.).
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_evo_name = 'avg/evo'
 		dset_doubleFreq_name = 'avg/f_double'
@@ -1379,13 +1393,15 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, ''), file_flag=True):
 	return y0_4
 
 #Plot all the magn. evolutions contained in the HDF5 file in the same figure
-def plot_m_all(input_name, file_flag=True):
+def plot_m_all(input_name):
 	"""Plot all the magn. evolutions contained in the HDF5 file in the same figure."""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	
 	num_runs = len(f.keys())
 	if 'avg' in f.keys():
@@ -1419,15 +1435,17 @@ def plot_m_all(input_name, file_flag=True):
 		f.close()
 
 #Plot the magn. evolution (given the run)
-def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
+def plot_m(input_name, run, save_m=False, image_flag=False):
 	"""Plot the magn. evolution (given the run).
 	The magn. can be saved in a TXT file.
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_evo_name = 'avg/evo'
 		dset_m_name = 'avg/m'
@@ -1487,18 +1505,20 @@ def plot_m(input_name, run, save_m=False, image_flag=False, file_flag=True):
 	return ax
 	
 #Plot the magn. evolution (given the run)
-def plot_op(input_name, run, type='1', save_op=False, image_flag=False, file_flag=True):
+def plot_op(input_name, run, my_type='1', save_op=False, image_flag=False):
 	"""Plot the order parameter evolution (given the run).
-	The "type" argument specifies what to plot:
+	The "my_type" argument specifies what to plot:
 	 1 - two curves, one for each T1 phase (o.p. and 1-o.p.)
 	 o - antiferromagnetic order parameter (2*o.p.-1)
-	The base order parameter (type='1') can be saved in a TXT file.
+	The base order parameter (my_type='1') can be saved in a TXT file.
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_evo_name = 'avg/evo'
 		dset_paramGS_name = 'avg/param_gs'
@@ -1529,11 +1549,11 @@ def plot_op(input_name, run, type='1', save_op=False, image_flag=False, file_fla
 	
 	fig = plt.figure(figsize=figsize_single)
 	ax = fig.add_subplot(1,1,1)
-	if type == '1':
+	if my_type == '1':
 		ax.semilogx(t[1:], param_gs[1:], '-', color=myG, linewidth=2, label='G.S. T1-p0') #initial value skipped because of LOG plot (t=0 is not drawable)
 		ax.semilogx(t[1:], 1.-param_gs[1:], '-', color=myM, linewidth=2, label='G.S. T1-p1') #initial value skipped because of LOG plot (t=0 is not drawable)
 		ax.set_ylim([-0.05, 1.05])
-	elif type == 'o':
+	elif my_type == 'o':
 		ax.semilogx(t[1:], 2*param_gs[1:]-1., '-', color=myB, linewidth=2, label='AF order param.') #initial value skipped because of LOG plot (t=0 is not drawable)
 		ax.set_ylim([-1.05, 1.05])
 		ax.axhline(0, color='k')
@@ -1565,16 +1585,18 @@ def plot_op(input_name, run, type='1', save_op=False, image_flag=False, file_fla
 	return ax
 
 #Fit of the magnetization evolution (given the run)
-def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
+def fit_m(input_name, run, ax, limits=(0, -1), my_type='str'):
 	"""Fit of the magnetization evolution (given the run).
-	The "type" argument can be 'str' for a stretched exponential
+	The "my_type" argument can be 'str' for a stretched exponential
 	or 'double' for a double exponential.
 	"""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_m_name = 'avg/m'
 		dset_t_name = 'avg/t'
@@ -1603,7 +1625,7 @@ def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
 	def doubleExp_func(x, a, b, c, d):
 		return (a*np.exp(-x/b) + c*np.exp(-x/d))
 	
-	if type == 'str':
+	if my_type == 'str':
 		legend_label = 'Fitted M - Stretched'
 		color = myR
 		popt, pcov = curve_fit(stretchedExp_func, t, m, p0=(1, (t[0]+t[-1])/2., 0.5), bounds=([-np.inf, 0, 0], np.inf))
@@ -1611,7 +1633,7 @@ def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
 		print('M0 = {:.4e}'.format(popt[0]))
 		print('Time Const. (s) = {:.4e}'.format(popt[1]))
 		print('Stretching exponent = {:.4e}'.format(popt[2]))
-	elif type == 'double':
+	elif my_type == 'double':
 		legend_label = 'Fitted M - Double'
 		color = myG
 		popt, pcov = curve_fit(doubleExp_func, t, m, p0=(1, (t[0]+t[-1])/2., 1, (t[0]+t[-1])/20.), bounds=([-np.inf, 0, -np.inf, 0], np.inf))
@@ -1632,13 +1654,15 @@ def fit_m(input_name, run, ax, limits=(0, -1), type='str', file_flag=True):
 	return popt, perr
 
 #Histogram of dt (and hopefully fit)
-def time_hist(input_name, run, limits=(0, -1), num_bins=100, fit=False, file_flag=True):
+def time_hist(input_name, run, limits=(0, -1), num_bins=100, fit=False):
 	"""Histogram of dt (and hopefully fit)."""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_evo_name = 'avg/evo'
 		dset_t_name = 'avg/t'
@@ -1686,13 +1710,15 @@ def time_hist(input_name, run, limits=(0, -1), num_bins=100, fit=False, file_fla
 	plt.show()
 
 #Dt step evolution
-def time_evoDt(input_name, run, file_flag=True):
+def time_evoDt(input_name, run):
 	"""Dt step evolution."""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	if run == -1:
 		dset_evo_name = 'avg/evo'
 		dset_t_name = 'avg/t'
@@ -1720,13 +1746,15 @@ def time_evoDt(input_name, run, file_flag=True):
 	plt.show()
 
 #Plot of the "timeLimit" attributes
-def time_limit(input_name, file_flag=True):
+def time_limit(input_name):
 	"""Plot of the "timeLimit" attributes."""
 	
-	if file_flag:
+	if type(input_name) == str:
 		f = h5py.File(input_name, 'r')
+		file_flag = True
 	else:
 		f = input_name
+		file_flag = False
 	num_runs = len(f.keys()) - 1
 	timeLimit_list = np.zeros(num_runs, dtype=np.float_)
 	kmcSteps_list = np.zeros(num_runs, dtype=np.float_)
