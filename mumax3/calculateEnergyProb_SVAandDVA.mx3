@@ -1,0 +1,151 @@
+//----- SET GEOMETRY -----
+//The 4/7 islands are created according to the following parameters:
+
+SetGridsize(340,220,1) //this must contain the whole geometry; be consistent with the cellsize
+SetCellsize(5e-9,5e-9,3e-9) //be consistent with the gridsize
+//EdgeSmooth = 8 //"geometry edge smoothing with EdgeSmooth^3 samples per cell, 0=staircase, ~8=very smooth"
+maj_axis := 470e-9 //major axis
+min_axis := 170e-9 //minor axis
+height := 3e-9 //thickness
+e_to_e := 130e-9 //gap
+delta_h := 0. //height offset (not needed for planar ASI)
+
+n_neigh := 6 //3 or 6
+nCases := pow(2,n_neigh)
+
+temperature := 350. //set the right temperature here (in K)
+
+kB := 1.3806488e-23 //in J/K
+M0 := 7.25e5
+Tc := 764
+beta := 0.35
+
+magn_value := 350e3 //M0*pow((1-temperature/Tc),beta)
+Aex = 13e-12
+
+//------------------------
+my_shift := (maj_axis - min_axis)/2
+h_island := cylinder(min_axis,height).transl(-my_shift,0,0).add(cylinder(min_axis,height).transl(my_shift,0,0)).add(cuboid(2*my_shift,min_axis,height)) //base hor. island
+v_island := h_island.rotz(90*pi/180) //base ver. island
+lat := maj_axis + e_to_e
+
+outName_E := ""
+outName_P := ""
+island7 := h_island.transl(0,0,-delta_h/2) //target island
+if n_neigh==6 {
+	island1 := h_island.transl(lat,0,-delta_h/2)
+	island2 := h_island.transl(-lat,0,-delta_h/2)
+	island3 := v_island.transl(0.5*lat,0.5*lat,delta_h/2)
+	island4 := v_island.transl(0.5*lat,-0.5*lat,delta_h/2)
+	island5 := v_island.transl(-0.5*lat,-0.5*lat,delta_h/2)
+	island6 := v_island.transl(-0.5*lat,0.5*lat,delta_h/2)
+	setGeom(island1.add(island2.add(island3.add(island4.add(island5.add(island6.add(island7)))))))
+	defRegion(1,island1)
+	defRegion(2,island2)
+	defRegion(3,island3)
+	defRegion(4,island4)
+	defRegion(5,island5)
+	defRegion(6,island6)
+	
+	outName_E = sprintf("Energy_%.1fK_Double.txt",temperature)
+	outName_P = sprintf("Prob_%.1fK_Double.txt",temperature)
+} else {
+	island1 := v_island.transl(0.5*lat,0.5*lat,delta_h/2)
+	island2 := h_island.transl(lat,0,-delta_h/2)
+	island3 := v_island.transl(0.5*lat,-0.5*lat,delta_h/2)
+	setGeom(island1.add(island2.add(island3.add(island7))))
+	defRegion(1,island1)
+	defRegion(2,island2)
+	defRegion(3,island3)
+	
+	outName_E = sprintf("Energy_%.1fK.txt",temperature)
+	outName_P = sprintf("Prob_%.1fK.txt",temperature)
+}
+defRegion(7,island7)
+
+saveas(geom,"considered_geom") //save the geometry to be inspected, then use "mumax3-convert -png .\considered_geom.ovf"
+//------------------------
+
+//Only the central island is magnetic
+Msat.setRegion(7,magn_value)
+
+energy_R_iso := 0.
+energy_T_iso := 0.
+for i:=0; i<n_neigh; i++ {
+	Msat.setRegion(i+1,0.)
+}
+m.setRegion(7,uniform(1,0,0))
+energy_R_iso = E_total/(kB*temperature)
+m.setRegion(7,uniform(0,1,0))
+energy_T_iso = E_total/(kB*temperature)
+fprintln(outName_E,energy_R_iso,energy_T_iso)
+
+//Magnetism for all the other islands
+for i:=0; i<n_neigh; i++ {
+	Msat.setRegion(i+1,magn_value)
+}
+
+energy_R := 0.
+energy_L := 0.
+energy_T := 0.
+energy_B := 0.
+prob_RtoL := 0.
+prob_LtoR := 0.
+
+quoziente := 0
+binaryVal := 0
+for i:=0; i<nCases; i++ {
+	
+	print(i)
+	
+	//Here, the nCases configurations for the n.n. islands (8/64) are generated
+	quoziente = i
+	for j:=0; j<n_neigh; j++ {
+		binaryVal = Mod(quoziente,2)
+		quoziente = Floor(quoziente/2)
+		if n_neigh==6 {
+			if j<4 {
+				m.setRegion(n_neigh-j,uniform(0,2*binaryVal-1,0))
+			} else {
+				m.setRegion(n_neigh-j,uniform(2*binaryVal-1,0,0))
+			}
+		} else {
+			if (n_neigh-j)==3 {
+				m.setRegion(n_neigh-j,uniform(0,2*binaryVal-1,0))
+			} else if (n_neigh-j)==2 {
+				m.setRegion(n_neigh-j,uniform(1-2*binaryVal,0,0))
+			} else {
+				m.setRegion(n_neigh-j,uniform(0,1-2*binaryVal,0))
+			}
+		}
+	}
+	
+	//Here, the central island's magnetization is set in 4 different directions;
+	//the "E_total" mumax's variable contains the total energy calculated according to the
+	//actual magnetization configuration of all the islands (UNIFORM magnetization, without "relax()")
+	//+X
+	m.setRegion(7,uniform(1,0,0))
+	energy_R = E_total/(kB*temperature)
+    // save(m)
+	//+Y
+	m.setRegion(7,uniform(0,1,0))
+	energy_T = E_total/(kB*temperature)
+    // save(m)
+	//-X
+	m.setRegion(7,uniform(-1,0,0))
+	energy_L = E_total/(kB*temperature)
+    // save(m)
+	//-Y
+	m.setRegion(7,uniform(0,-1,0))
+	energy_B = E_total/(kB*temperature)
+    // save(m)
+	
+	prob_RtoL = exp(energy_R-energy_T) + exp(energy_R-energy_B)
+	prob_LtoR = exp(energy_L-energy_T) + exp(energy_L-energy_B)
+	
+	//Here, the energy for the 4 magnetization directions is saved (in kB*T units)
+	fprintln(outName_E,energy_R,energy_T,energy_L,energy_B)
+	//Here, the input for the kMC is saved
+	fprintln(outName_P,prob_RtoL,prob_LtoR)
+	
+}
