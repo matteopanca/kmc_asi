@@ -1,6 +1,7 @@
 # kMC-ASI
 
 Kinetic Monte Carlo for square ASI systems.
+See also this thesis (download link): https://www.nanogune.eu/en/publications/phd-theses/71
 
 ## Installing
 
@@ -8,6 +9,12 @@ I'm not a professional programmer, so just download everything you see here and 
 
 ```
 python .\setup.py install
+```
+
+or
+
+```
+pip install .
 ```
 
 where the setup.py file is. Enjoy!
