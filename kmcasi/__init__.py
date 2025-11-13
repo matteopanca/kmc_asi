@@ -959,7 +959,7 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet'):
 	return transitions_double, transitions_single
 
 #Draw colored map (given the run and the image num.)
-def draw_map(input_name, run, image, my_type='v'):
+def draw_map(input_name, run, image, my_type='v', ax='', size_points=None):
 	"""Draw colored vertex map (given the run and the image number).
 	The "my_type" argument specifies what meaning the colours have:
 	 v - 4 vertices
@@ -1026,19 +1026,29 @@ def draw_map(input_name, run, image, my_type='v'):
 				color[counter] = color_dictionary[map[i,j]]
 			counter += 1
 	
-	size_points = 20e4*(1/max(rows, cols))**2
-	fig = plt.figure(figsize=figsize_single)
-	ax = fig.add_subplot(1,1,1)
+	if size_points is None:
+		size_points = 20e4*(1/max(rows, cols))**2
+	
+	if ax == '':
+		fig = plt.figure(figsize=figsize_single)
+		ax = fig.add_subplot(1,1,1)
+		insert_title = True
+	else:
+		insert_title = False
 	ax.scatter(x_coord, y_coord, size_points, color, edgecolors=color)
-	ax.set_title('{:d} x {:d} Vertices - Run {:d}, Image {:d}, Step {:.1f} - t = {:.4e} s'.format(rows, cols, run, image, step, t))
+	if insert_title:
+		ax.set_title('{:d} x {:d} Vertices - Run {:d}, Image {:d}, Step {:.1f} - t = {:.4e} s'.format(rows, cols, run, image, step, t))
 	ax.axis('scaled')
 	ax.set_xlim([-1, cols])
 	ax.set_ylim([-1, rows])
-	plt.tight_layout()
-	plt.show()
+	if ax == '':
+		plt.tight_layout()
+		plt.show()
+	
+	return step
 
 #Plot the 4 vertices evolution (given the run)
-def plot_evo(input_name, run, save_evo=False, image_flag=False):
+def plot_evo(input_name, run, save_evo=False, image_flag=False, ax=''):
 	"""Plot the 4 vertices evolution (given the run).
 	The curves can be saved in a TXT file.
 	"""
@@ -1080,8 +1090,9 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False):
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
 	
-	fig = plt.figure(figsize=figsize_single)
-	ax = fig.add_subplot(1,1,1)
+	if ax == '':
+		fig = plt.figure(figsize=figsize_single)
+		ax = fig.add_subplot(1,1,1)
 	for i in range(4):
 		ax.semilogx(t[1:], evo_4vertices[1:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1)) #initial value skipped because of LOG plot (t=0 is not drawable)
 		#ax.plot(t, evo_4vertices[:, i], '-', color=color_dictionary_4vert[i], linewidth=2, label='T{:d}'.format(i+1))
@@ -1097,7 +1108,8 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False):
 			ax.axvline(x_coord[i], color='k')
 	ax.grid(True)
 	ax.legend(loc='best')
-	plt.show()
+	if ax == '':
+		plt.show()
 	
 	if save_evo:
 		ext_position = 1 + input_name[::-1].find('.')
@@ -1112,7 +1124,7 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False):
 	return ax
 	
 #Plot the T1 phases evolution (given the run)
-def plot_evoT1(input_name, run, image_flag=False):
+def plot_evoT1(input_name, run, image_flag=False, ax=''):
 	"""Plot the T1 phases evolution (given the run)."""
 	
 	if type(input_name) == str:
@@ -1158,8 +1170,9 @@ def plot_evoT1(input_name, run, image_flag=False):
 		if (i != 5) and (i != 10):
 			evo_CompleteT1[:, 2] += evo[:, i]
 	
-	fig = plt.figure(figsize=figsize_single)
-	ax = fig.add_subplot(1,1,1)
+	if ax == '':
+		fig = plt.figure(figsize=figsize_single)
+		ax = fig.add_subplot(1,1,1)
 	for i in range(2):
 		ax.semilogx(t[1:], evo_CompleteT1[1:,i], '-', color=color_dictionary_T1[i], linewidth=2, label='T1 Phase {:d}'.format(i)) #initial value skipped because of LOG plot (t=0 is not drawable)
 	ax.semilogx(t[1:], evo_CompleteT1[1:,2], '-', color=color_dictionary_T1[2], linewidth=2, label='Boundary') #initial value skipped because of LOG plot (t=0 is not drawable)
@@ -1175,7 +1188,8 @@ def plot_evoT1(input_name, run, image_flag=False):
 			ax.axvline(x_coord[i], color='k')
 	ax.grid(True)
 	ax.legend(loc='best')
-	plt.show()
+	if ax == '':
+		plt.show()
 
 #Plot the (4 vertices) SVA MASTER EQUATION evolution given the run and (optionally) the destination axis
 def plot_meq_sva(input_name, run, ax=''):
