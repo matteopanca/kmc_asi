@@ -69,12 +69,12 @@ list_trans_double = np.array([
 class BasicUnit:
 
 	def __init__(self):
-		self.address = np.zeros(2, dtype=np.int_)
+		self.address = np.zeros(2, dtype=int)
 		self.dir = 1 #1 is RIGHT/UP - 0 is LEFT/DOWN
 		self.sign = 1 #Factor (0 or 1) for the choice of the probability: abs(x - factor)
 		self.neigh_num = 6
-		self.neigh_list = np.zeros(self.neigh_num, dtype=np.int_) - 1 #-1 means not used (it's not a valid linear address)
-		self.neigh_sign = np.zeros(self.neigh_num, dtype=np.int_) #Factor (0 or 1) for modifying the direction: abs(x - factor)
+		self.neigh_list = np.zeros(self.neigh_num, dtype=int) - 1 #-1 means not used (it's not a valid linear address)
+		self.neigh_sign = np.zeros(self.neigh_num, dtype=int) #Factor (0 or 1) for modifying the direction: abs(x - factor)
 		self.disorder = 0 #exponent correction for introducing disorder
 
 #Container + Methods for working with the whole array
@@ -108,24 +108,24 @@ class Array:
 		else: #finite
 			self.totEl = self.input_rows*(self.input_cols+1) + self.input_cols*(self.input_rows+1)
 		self.list = [BasicUnit() for i in range(self.totEl)] #The array as a collection of BasicUnit objects
-		self.list_freq = np.zeros(self.totEl, dtype=np.float_)
-		self.list_partialSum = np.zeros(self.totEl, dtype=np.float_)
-		self.evolution = np.zeros((self.input_kmcSteps+1, 16), dtype=np.float_)
-		self.evolution_T1 = np.zeros((self.input_kmcSteps+1, 2), dtype=np.float_)
-		self.ref_gs = 1 + np.zeros(self.totEl, dtype=np.int_)
-		self.param_gs = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
-		self.t = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
-		self.m = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
-		self.map = np.zeros((self.input_rows, self.input_cols), dtype=np.int_)
-		self.index_saveImg = np.int_(np.round(np.power(10, np.linspace(0, np.log10(self.input_kmcSteps), self.input_images)))-1)
+		self.list_freq = np.zeros(self.totEl, dtype=np.float64)
+		self.list_partialSum = np.zeros(self.totEl, dtype=np.float64)
+		self.evolution = np.zeros((self.input_kmcSteps+1, 16), dtype=np.float64)
+		self.evolution_T1 = np.zeros((self.input_kmcSteps+1, 2), dtype=np.float64)
+		self.ref_gs = 1 + np.zeros(self.totEl, dtype=int)
+		self.param_gs = np.zeros(self.input_kmcSteps+1, dtype=np.float64)
+		self.t = np.zeros(self.input_kmcSteps+1, dtype=np.float64)
+		self.m = np.zeros(self.input_kmcSteps+1, dtype=np.float64)
+		self.map = np.zeros((self.input_rows, self.input_cols), dtype=int)
+		self.index_saveImg = np.astype(np.round(np.power(10, np.linspace(0, np.log10(self.input_kmcSteps), self.input_images)))-1, int)
 		self.index_saveImg = np.unique(self.index_saveImg)
 		self.input_images = len(self.index_saveImg) + 1
-		self.img_step = np.zeros(self.input_images, dtype=np.int_)
-		self.img_archive = np.zeros((self.input_rows, self.input_cols, self.input_images), dtype=np.int_)
+		self.img_step = np.zeros(self.input_images, dtype=int)
+		self.img_archive = np.zeros((self.input_rows, self.input_cols, self.input_images), dtype=int)
 		
-		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
-		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
-		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=np.int_) #index, [neighbours, table row, table column, row_coord, col_coord]
+		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=int) - 1 #index, [from, to]
+		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=int) - 1 #index, [from, to]
+		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=int) #index, [neighbours, table row, table column, row_coord, col_coord]
 		
 		#Methods for initializing the array
 		self.generate_array()
@@ -151,24 +151,24 @@ class Array:
 		self.freq_single = self.input_attemptFreq[1]*input_prob[1]
 		self.totEl = old_obj.totEl
 		self.list = old_obj.list #The array as a collection of BasicUnit objects
-		self.list_freq = np.zeros(self.totEl, dtype=np.float_)
-		self.list_partialSum = np.zeros(self.totEl, dtype=np.float_)
-		self.evolution = np.zeros((self.input_kmcSteps+1, 16), dtype=np.float_)
-		self.evolution_T1 = np.zeros((self.input_kmcSteps+1, 2), dtype=np.float_)
+		self.list_freq = np.zeros(self.totEl, dtype=np.float64)
+		self.list_partialSum = np.zeros(self.totEl, dtype=np.float64)
+		self.evolution = np.zeros((self.input_kmcSteps+1, 16), dtype=np.float64)
+		self.evolution_T1 = np.zeros((self.input_kmcSteps+1, 2), dtype=np.float64)
 		self.ref_gs = old_obj.ref_gs
-		self.param_gs = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
-		self.t = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
-		self.m = np.zeros(self.input_kmcSteps+1, dtype=np.float_)
+		self.param_gs = np.zeros(self.input_kmcSteps+1, dtype=np.float64)
+		self.t = np.zeros(self.input_kmcSteps+1, dtype=np.float64)
+		self.m = np.zeros(self.input_kmcSteps+1, dtype=np.float64)
 		self.map = old_obj.map
-		self.index_saveImg = np.int_(np.round(np.power(10, np.linspace(0, np.log10(self.input_kmcSteps), self.input_images)))-1)
+		self.index_saveImg = np.astype(np.round(np.power(10, np.linspace(0, np.log10(self.input_kmcSteps), self.input_images)))-1, int)
 		self.index_saveImg = np.unique(self.index_saveImg)
 		self.input_images = len(self.index_saveImg) + 1
-		self.img_step = np.zeros(self.input_images, dtype=np.int_)
-		self.img_archive = np.zeros((self.input_rows, self.input_cols, self.input_images), dtype=np.int_)
+		self.img_step = np.zeros(self.input_images, dtype=int)
+		self.img_archive = np.zeros((self.input_rows, self.input_cols, self.input_images), dtype=int)
 		
-		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
-		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=np.int_) - 1 #index, [from, to]
-		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=np.int_) #index, [neighbours, table row, table column, row_coord, col_coord]
+		self.trans_double = np.zeros((self.input_kmcSteps, 2), dtype=int) - 1 #index, [from, to]
+		self.trans_single = np.zeros((self.input_kmcSteps, 2), dtype=int) - 1 #index, [from, to]
+		self.nrc = np.zeros((self.input_kmcSteps, 5), dtype=int) #index, [neighbours, table row, table column, row_coord, col_coord]
 		
 		#Initialize the "new" evolution
 		self.evolution[0, :] = old_obj.evolution[-1, :]*self.input_rows*self.input_cols
@@ -204,7 +204,7 @@ class Array:
 		return address_array
 	
 	def get_vertexMask(self, starting_address):
-		binary_map = np.zeros(4, dtype=np.int_)
+		binary_map = np.zeros(4, dtype=int)
 		binary_map[0] = self.list[self.get_address_linear(self.wrap(starting_address))].dir
 		following_address = [starting_address[0]+1, starting_address[1]]
 		binary_map[1] = self.list[self.get_address_linear(self.wrap(following_address))].dir
@@ -217,12 +217,12 @@ class Array:
 		return binary_map
 	
 	def extract_code(self, mask):
-		power_array = np.power(2, np.flipud(np.arange(0, len(mask), dtype=np.int_)))
+		power_array = np.power(2, np.flipud(np.arange(0, len(mask), dtype=int)))
 		return np.sum(mask*power_array)
 	
 	def get_freq(self, index):
 		neigh_num = self.list[index].neigh_num
-		binary_map = np.zeros(neigh_num, dtype=np.int_)
+		binary_map = np.zeros(neigh_num, dtype=int)
 		for j in range(neigh_num):
 			binary_map[j] = self.list[self.list[index].neigh_list[j]].dir
 			binary_map[j] = abs(binary_map[j] - self.list[index].neigh_sign[j])
@@ -274,8 +274,8 @@ class Array:
 				pos_mask1 = 0
 				address2 = self.list[self.list[itf].neigh_list[1]].address #LEFT
 				pos_mask2 = 2
-			map_position1 = [np.int_((address1[0]-1)/2), address1[1]]
-			map_position2 = [np.int_((address2[0]-1)/2), address2[1]]
+			map_position1 = [int((address1[0]-1)/2), address1[1]]
+			map_position2 = [int((address2[0]-1)/2), address2[1]]
 			vertex_mask1 = self.get_vertexMask(address1)
 			vertex_type1 = self.extract_code(vertex_mask1)
 			vertex_mask2 = self.get_vertexMask(address2)
@@ -296,7 +296,7 @@ class Array:
 			self.update_evoT1(index+1, map_position2, vertex_type2, 1)
 			self.map[map_position1[0], map_position1[1]] = vertex_type1
 			self.map[map_position2[0], map_position2[1]] = vertex_type2
-			self.trans_double[index, :] = np.array([start_trans, list_trans_double[evo_dictionary_4vert[vertex_type1], evo_dictionary_4vert[vertex_type2]]], dtype=np.int_)
+			self.trans_double[index, :] = np.array([start_trans, list_trans_double[evo_dictionary_4vert[vertex_type1], evo_dictionary_4vert[vertex_type2]]], dtype=int)
 		else: #Boundary islands for 'fixed' boundary conditions
 			if self.list[itf].address[0] == 0:
 				address1 = self.list[self.list[itf].neigh_list[0]].address #BOTTOM Row
@@ -310,7 +310,7 @@ class Array:
 			else:
 				address1 = self.list[self.list[itf].neigh_list[1]].address #RIGHT Column
 				pos_mask1 = 2
-			map_position1 = [np.int_((address1[0]-1)/2), address1[1]]
+			map_position1 = [int((address1[0]-1)/2), address1[1]]
 			vertex_mask1 = self.get_vertexMask(address1)
 			vertex_type1 = self.extract_code(vertex_mask1)
 			self.evolution[index+1, vertex_type1] -= 1
@@ -322,7 +322,7 @@ class Array:
 			self.evolution[index+1, vertex_type1] += 1
 			self.update_evoT1(index+1, map_position1, vertex_type1, 1)
 			self.map[map_position1[0], map_position1[1]] = vertex_type1
-			self.trans_single[index, :] = np.array([start_trans, evo_dictionary_4vert[vertex_type1]], dtype=np.int_)
+			self.trans_single[index, :] = np.array([start_trans, evo_dictionary_4vert[vertex_type1]], dtype=int)
 	
 	#Filling the attributes for each element
 	def generate_array(self):
@@ -643,10 +643,10 @@ def avg_runs(f):
 	
 	#Interpolating and averaging
 	kmcSteps = f['run0/evo'].attrs['kmcSteps']
-	evolution_avg = np.zeros((kmcSteps+1, 16), dtype=np.float_)
-	evolutionT1_avg = np.zeros((kmcSteps+1, 2), dtype=np.float_)
-	m_avg = np.zeros(kmcSteps+1, dtype=np.float_)
-	paramGS_avg = np.zeros(kmcSteps+1, dtype=np.float_)
+	evolution_avg = np.zeros((kmcSteps+1, 16), dtype=np.float64)
+	evolutionT1_avg = np.zeros((kmcSteps+1, 2), dtype=np.float64)
+	m_avg = np.zeros(kmcSteps+1, dtype=np.float64)
+	paramGS_avg = np.zeros(kmcSteps+1, dtype=np.float64)
 	for run in range(num_runs):
 		evolution_run = f['run{:d}/evo'.format(run)][()]
 		evolutionT1_run = f['run{:d}/evo_T1'.format(run)][()]
@@ -707,19 +707,19 @@ def merge_runs(f):
 		del f['merged']
 		print('MERGED group deleted')
 	num_runs = len(f.keys())
-	kmcSteps = np.zeros(num_runs, dtype=np.float_)
+	kmcSteps = np.zeros(num_runs, dtype=np.float64)
 	for run in range(num_runs):
 		kmcSteps[run] = f['run{:d}/evo'.format(run)].attrs['kmcSteps']
 	kmcSteps_tot = np.sum(kmcSteps)
 	
-	evolution_merged = np.zeros((kmcSteps_tot+1, 16), dtype=np.float_)
-	evolutionT1_merged = np.zeros((kmcSteps_tot+1, 2), dtype=np.float_)
-	t_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
-	m_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
-	paramGS_merged = np.zeros(kmcSteps_tot+1, dtype=np.float_)
-	doubleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
-	singleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=np.int_)
-	nrc_merged = np.zeros((kmcSteps_tot, 5), dtype=np.int_)
+	evolution_merged = np.zeros((kmcSteps_tot+1, 16), dtype=np.float64)
+	evolutionT1_merged = np.zeros((kmcSteps_tot+1, 2), dtype=np.float64)
+	t_merged = np.zeros(kmcSteps_tot+1, dtype=np.float64)
+	m_merged = np.zeros(kmcSteps_tot+1, dtype=np.float64)
+	paramGS_merged = np.zeros(kmcSteps_tot+1, dtype=np.float64)
+	doubleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=int)
+	singleTrans_merged = np.zeros((kmcSteps_tot, 2), dtype=int)
+	nrc_merged = np.zeros((kmcSteps_tot, 5), dtype=int)
 	
 	evolution_run = f['run0/evo'][()]
 	evolutionT1_run = f['run0/evo_T1'][()]
@@ -811,7 +811,7 @@ def calc_eq(input_name, start_time):
 		file_flag = False
 	
 	num_runs = len(f.keys()) - 1
-	eq_pop = np.zeros(16, dtype=np.float_)
+	eq_pop = np.zeros(16, dtype=np.float64)
 	for run in range(num_runs):
 		evo_run = f['run{:d}/evo'.format(run)][()]
 		t_run = f['run{:d}/t'.format(run)][()]
@@ -827,7 +827,7 @@ def calc_eq(input_name, start_time):
 	if file_flag:
 		f.close()
 	
-	eq_pop_4vertices = np.zeros(4, dtype=np.float_)
+	eq_pop_4vertices = np.zeros(4, dtype=np.float64)
 	for i in range(16):
 		eq_pop_4vertices[evo_dictionary_4vert[i]] += eq_pop[i]
 	
@@ -893,10 +893,10 @@ def draw_trans(input_name, run, time_range=(0, -1), cmap_name='jet'):
 	n_trans_single = np.sum(flag_single)
 	n_trans = n_trans_double + n_trans_single
 	
-# 	transitions_double = np.zeros((11, 11), dtype=np.float_) #11 for properly drawing...
-# 	transitions_single = np.zeros((5, 5), dtype=np.float_) #5 for properly drawing...
-	transitions_double = np.zeros((10, 10), dtype=np.float_)
-	transitions_single = np.zeros((4, 4), dtype=np.float_)
+# 	transitions_double = np.zeros((11, 11), dtype=np.float64) #11 for properly drawing...
+# 	transitions_single = np.zeros((5, 5), dtype=np.float64) #5 for properly drawing...
+	transitions_double = np.zeros((10, 10), dtype=np.float64)
+	transitions_single = np.zeros((4, 4), dtype=np.float64)
 	for i in np.arange(n_trans):
 		if flag_double[i]:
 			transitions_double[ldt_to_consider[i, 1], ldt_to_consider[i, 0]] += 1
@@ -1078,7 +1078,7 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, ax=''):
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
 		images_num = f[dset_evo_name].attrs['images']
-		x_coord = np.zeros(images_num-1, dtype=np.float_)
+		x_coord = np.zeros(images_num-1, dtype=np.float64)
 		for i in range(images_num-1):
 			x_coord[i] = f['run{:d}/images/img{:d}'.format(run, i+1)].attrs['t']
 	if file_flag:
@@ -1086,7 +1086,7 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, ax=''):
 	
 	color_dictionary_4vert = [myG, myB, myR, myY]
 	#color_dictionary_4vert = [myK, myR, myB, myY] #PRL 111 057204 (2013)
-	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float_)
+	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float64)
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
 	
@@ -1114,7 +1114,7 @@ def plot_evo(input_name, run, save_evo=False, image_flag=False, ax=''):
 	if save_evo:
 		ext_position = 1 + input_name[::-1].find('.')
 		out_name = input_name[:-ext_position] + '_Evo_run{:d}.txt'.format(run)
-		data_to_save = np.zeros((kmcSteps+1, 5), dtype=np.float_)
+		data_to_save = np.zeros((kmcSteps+1, 5), dtype=np.float64)
 		data_to_save[:, 0] = t
 		for i in range(4):
 			data_to_save[:, i+1] = evo_4vertices[:, i]
@@ -1157,14 +1157,14 @@ def plot_evoT1(input_name, run, image_flag=False, ax=''):
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
 		images_num = f[dset_evo_name].attrs['images']
-		x_coord = np.zeros(images_num-1, dtype=np.float_)
+		x_coord = np.zeros(images_num-1, dtype=np.float64)
 		for i in range(images_num-1):
 			x_coord[i] = f['run{:d}/images/img{:d}'.format(run, i+1)].attrs['t']
 	if file_flag:
 		f.close()
 	
 	color_dictionary_T1 = [myG, myM, myK]
-	evo_CompleteT1 = np.zeros((kmcSteps+1, 3), dtype=np.float_)
+	evo_CompleteT1 = np.zeros((kmcSteps+1, 3), dtype=np.float64)
 	evo_CompleteT1[:, 0:2] = evo_T1
 	for i in range(16):
 		if (i != 5) and (i != 10):
@@ -1218,13 +1218,13 @@ def plot_meq_sva(input_name, run, ax=''):
 	if file_flag:
 		f.close()
 	
-	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float_)
+	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float64)
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
 	y0_4 = evo_4vertices[0, :] #starting state (4 vertices)
 	
 	#Build the frequencies
-	freq_table = np.zeros((4, 4), dtype=np.float_)
+	freq_table = np.zeros((4, 4), dtype=np.float64)
 	freq_table[0, 2] = singleFreq[2, 1]
 	freq_table[2, 0] = 4*singleFreq[2, 0]
 	freq_table[1, 2] = 2*singleFreq[1, 1]
@@ -1234,7 +1234,7 @@ def plot_meq_sva(input_name, run, ax=''):
 	
 	#Derivative function
 	def meq_func(y, t, f):
-		dy = np.zeros(4, dtype=np.float_)
+		dy = np.zeros(4, dtype=np.float64)
 		dy[0] = f[0, 2]*y[2] - f[2, 0]*y[0]
 		dy[1] = f[1, 2]*y[2] - f[2, 1]*y[1]
 		dy[2] = f[2, 0]*y[0] + f[2, 1]*y[1] + f[2, 3]*y[3] - (f[0, 2]+f[1, 2]+f[3, 2])*y[2]
@@ -1301,7 +1301,7 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, '')):
 	if file_flag:
 		f.close()
 	
-	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float_)
+	evo_4vertices = np.zeros((kmcSteps+1, 4), dtype=np.float64)
 	for i in range(16):
 		evo_4vertices[:, evo_dictionary_4vert[i]] += evo[:, i]
 	y0_4 = evo_4vertices[0, :] #starting state (4 vertices)
@@ -1318,7 +1318,7 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, '')):
 	# 8 - 34
 	# 9 - 44
 	#-------------
-	freq_table = np.zeros((10, 10), dtype=np.float_)
+	freq_table = np.zeros((10, 10), dtype=np.float64)
 	freq_table[7, 0] = 16*doubleFreq[10, 0]
 	freq_table[7, 3] = 32*doubleFreq[6, 0]
 	freq_table[7, 1] = 32*doubleFreq[17, 1]
@@ -1341,8 +1341,8 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, '')):
 	freq_table /= 8 #global factor
 	#Derivative function
 	def meq_func(y, t, f):
-		dyAnn = np.zeros(4, dtype=np.float_)
-		dyCre = np.zeros(4, dtype=np.float_)
+		dyAnn = np.zeros(4, dtype=np.float64)
+		dyCre = np.zeros(4, dtype=np.float64)
 		dyAnn[0] = 2*y[0]*y[0]*f[7,0] + y[0]*y[3]*f[7,3] + y[0]*y[1]*f[7,1] + y[0]*y[2]*(f[5,2] + f[8,2])
 		dyCre[0] = y[1]*y[2]*f[2,5] + y[3]*y[2]*f[2,8] + y[2]*y[2]*(2*f[0,7] + f[3,7] + f[1,7])
 		dyAnn[1] = 2*y[1]*y[1]*f[7,4] + y[1]*y[0]*f[7,1] + y[1]*y[3]*f[7,6] + y[1]*y[2]*(f[2,5] + f[8,5])
@@ -1355,8 +1355,8 @@ def plot_meq_dva(input_name, run, ax='', noT1=(False, '')):
 	#Derivative function - No T1 ( y[0] -> c*(y[1] + y[2] + y[3]) )
 	#Also y[3] could be added, but when domain forms, y[3] has already disappeared
 	def meq_func_noT1(y, t, f, c):
-		dyAnn = np.zeros(4, dtype=np.float_)
-		dyCre = np.zeros(4, dtype=np.float_)
+		dyAnn = np.zeros(4, dtype=np.float64)
+		dyCre = np.zeros(4, dtype=np.float64)
 		#no y[0] evolution
 		my_y0 = c*(y[1] + y[2] + y[3])
 		dyAnn[1] = 2*y[1]*y[1]*f[7,4] + y[1]*my_y0*f[7,1] + y[1]*y[3]*f[7,6] + y[1]*y[2]*(f[2,5] + f[8,5])
@@ -1484,7 +1484,7 @@ def plot_m(input_name, run, save_m=False, image_flag=False):
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
 		images_num = f[dset_evo_name].attrs['images']
-		x_coord = np.zeros(images_num-1, dtype=np.float_)
+		x_coord = np.zeros(images_num-1, dtype=np.float64)
 		for i in range(images_num-1):
 			x_coord[i] = f['run{:d}/images/img{:d}'.format(run, i+1)].attrs['t']
 	if file_flag:
@@ -1512,7 +1512,7 @@ def plot_m(input_name, run, save_m=False, image_flag=False):
 		ext_position = 1 + input_name[::-1].find('.')
 		out_name = input_name[:-ext_position] + '_M_run{:d}.txt'.format(run)
 		
-		data_to_save = np.zeros((kmcSteps+1, 2), dtype=np.float_)
+		data_to_save = np.zeros((kmcSteps+1, 2), dtype=np.float64)
 		data_to_save[:, 0] = t
 		data_to_save[:, 1] = m
 		np.savetxt(out_name, data_to_save, fmt='%.8e', delimiter='\t')
@@ -1557,7 +1557,7 @@ def plot_op(input_name, run, my_type='1', save_op=False, image_flag=False):
 	rows, cols = f[dset_evo_name].attrs['dim']
 	if image_flag and run >= 0:
 		images_num = f[dset_evo_name].attrs['images']
-		x_coord = np.zeros(images_num-1, dtype=np.float_)
+		x_coord = np.zeros(images_num-1, dtype=np.float64)
 		for i in range(images_num-1):
 			x_coord[i] = f['run{:d}/images/img{:d}'.format(run, i+1)].attrs['t']
 	if file_flag:
@@ -1592,7 +1592,7 @@ def plot_op(input_name, run, my_type='1', save_op=False, image_flag=False):
 		ext_position = 1 + input_name[::-1].find('.')
 		out_name = input_name[:-ext_position] + '_paramGS_run{:d}.txt'.format(run)
 		
-		data_to_save = np.zeros((kmcSteps+1, 2), dtype=np.float_)
+		data_to_save = np.zeros((kmcSteps+1, 2), dtype=np.float64)
 		data_to_save[:, 0] = t
 		data_to_save[:, 1] = param_gs
 		np.savetxt(out_name, data_to_save, fmt='%.8e', delimiter='\t')
@@ -1772,9 +1772,9 @@ def time_limit(input_name):
 		f = input_name
 		file_flag = False
 	num_runs = len(f.keys()) - 1
-	timeLimit_list = np.zeros(num_runs, dtype=np.float_)
-	kmcSteps_list = np.zeros(num_runs, dtype=np.float_)
-	run_list = np.arange(num_runs, dtype=np.int_)
+	timeLimit_list = np.zeros(num_runs, dtype=np.float64)
+	kmcSteps_list = np.zeros(num_runs, dtype=np.float64)
+	run_list = np.arange(num_runs, dtype=int)
 	for run in run_list:
 		dset_evo_name = 'run{:d}/evo'.format(run)
 		timeLimit_list[run] = f[dset_evo_name].attrs['timeLimit']
@@ -1847,8 +1847,8 @@ def kmc_simulation(config_file, create_mode='a', verbose=False):
 		output_name = config_file[13]
 	else:
 		raise RuntimeError('Argument type not available as input.')
-	prob_double = np.loadtxt(control_list[0], dtype=np.float_)
-	prob_single = np.loadtxt(control_list[1], dtype=np.float_)
+	prob_double = np.loadtxt(control_list[0], dtype=np.float64)
+	prob_single = np.loadtxt(control_list[1], dtype=np.float64)
 	
 	#Running the simulation ("num_runs" times)
 	output_file = h5py.File(output_name, create_mode)
